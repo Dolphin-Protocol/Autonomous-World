@@ -1,0 +1,8 @@
+[package]
+name = "autonomous-game"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+macroquad = "0.4.13"
+macroquad-tiled = "0.2.1"
