@@ -2,6 +2,11 @@ let wasm;
 
 export const set_wasm = (w) => (wasm = w);
 
+// binded function
+function logPosition(x, y) {
+  console.log(`user position at ${x}, ${y}`);
+}
+
 const cachedTextDecoder =
   typeof TextDecoder !== "undefined"
     ? new TextDecoder("utf-8", { ignoreBOM: true, fatal: true })
@@ -244,16 +249,6 @@ function initSync(module) {
   }
 
   return __wbg_get_imports();
-
-  __wbg_init_memory(imports);
-
-  if (!(module instanceof WebAssembly.Module)) {
-    module = new WebAssembly.Module(module);
-  }
-
-  const instance = new WebAssembly.Instance(module, imports);
-
-  return __wbg_finalize_init(instance, module);
 }
 
 async function __wbg_init(module_or_path) {
