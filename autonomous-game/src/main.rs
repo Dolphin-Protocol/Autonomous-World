@@ -1,8 +1,11 @@
+use autonomous_game::{greet, log_player_position, GameState};
 use macroquad::prelude::*;
 use macroquad_tiled as tiled;
 
 const SPRITE_SIZE: f32 = 48.0;
 const ANIMATION_SPEED: f32 = 0.1;
+
+static mut SHARED_STATE: GameState = GameState { speed: 0.0 };
 
 struct Player {
     position: Vec2,
@@ -60,7 +63,12 @@ impl Player {
     }
 
     fn update(&mut self, dt: f32) {
-        let speed = 200.0;
+        let mut speed = 200.0;
+        unsafe {
+            if SHARED_STATE.speed != 0.0 {
+                speed = SHARED_STATE.speed;
+            };
+        };
         let mut movement = Vec2::ZERO;
         self.is_moving = false;
 
@@ -104,6 +112,7 @@ impl Player {
         }
 
         self.clamp_position();
+        log_player_position(self.position.x, self.position.y);
     }
 
     fn draw(&self) {
@@ -164,6 +173,8 @@ async fn main() {
 
     // updae player's value
     player.set_map_bounds(map_bounds);
+
+    greet("game start");
 
     loop {
         clear_background(WHITE);

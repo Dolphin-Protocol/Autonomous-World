@@ -1,0 +1,34 @@
+/* tslint:disable */
+/* eslint-disable */
+export const memory: WebAssembly.Memory;
+export const main: (a: number, b: number) => number;
+export const file_loaded: (a: number) => void;
+export const crate_version: () => number;
+export const allocate_vec_u8: (a: number) => number;
+export const on_clipboard_paste: (a: number, b: number) => void;
+export const frame: () => void;
+export const mouse_move: (a: number, b: number) => void;
+export const raw_mouse_move: (a: number, b: number) => void;
+export const mouse_down: (a: number, b: number, c: number) => void;
+export const mouse_up: (a: number, b: number, c: number) => void;
+export const mouse_wheel: (a: number, b: number) => void;
+export const key_down: (a: number, b: number, c: number) => void;
+export const key_press: (a: number) => void;
+export const key_up: (a: number, b: number) => void;
+export const resize: (a: number, b: number) => void;
+export const touch: (a: number, b: number, c: number, d: number) => void;
+export const focus: (a: number) => void;
+export const on_files_dropped_start: () => void;
+export const on_files_dropped_finish: () => void;
+export const on_file_dropped: (a: number, b: number, c: number, d: number) => void;
+export const greet: (a: number, b: number) => void;
+export const __wbg_gamestate_free: (a: number, b: number) => void;
+export const __wbg_get_gamestate_speed: (a: number) => number;
+export const __wbg_set_gamestate_speed: (a: number, b: number) => void;
+export const gamestate_new: () => number;
+export const gamestate_set_player_speed: (a: number, b: number) => void;
+export const gamestate_get_player_speed: (a: number) => number;
+export const __wbindgen_export_0: WebAssembly.Table;
+export const __wbindgen_malloc: (a: number, b: number) => number;
+export const __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
+export const __wbindgen_start: () => void;
