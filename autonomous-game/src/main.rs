@@ -11,6 +11,7 @@ struct Player {
     frame_timer: f32,
     facing: Direction,
     is_moving: bool,
+    map_bounds: Rect, // Add map bounds
 }
 
 #[derive(PartialEq, Clone)]
@@ -23,9 +24,11 @@ enum Direction {
 
 impl Player {
     async fn new() -> Self {
-        let texture = load_texture("assets/BasicCharakterSpritesheet.png").await.unwrap();
+        let texture = load_texture("assets/BasicCharacterSpritesheet.png")
+            .await
+            .unwrap();
         texture.set_filter(FilterMode::Nearest);
-        
+
         Self {
             position: Vec2::new(screen_width() / 2.0, screen_height() / 2.0),
             texture,
@@ -33,7 +36,27 @@ impl Player {
             frame_timer: 0.0,
             facing: Direction::Down,
             is_moving: false,
+            map_bounds: Rect::new(0.0, 0.0, 0.0, 0.0), // Will be set later
         }
+    }
+
+    fn set_map_bounds(&mut self, bounds: Rect) {
+        self.map_bounds = bounds;
+    }
+
+    fn clamp_position(&mut self) {
+        // Account for character sprite size when clamping
+        let half_sprite = SPRITE_SIZE / 2.0;
+
+        self.position.x = self.position.x.clamp(
+            self.map_bounds.x + half_sprite,
+            self.map_bounds.x + self.map_bounds.w - half_sprite,
+        );
+
+        self.position.y = self.position.y.clamp(
+            self.map_bounds.y + half_sprite,
+            self.map_bounds.y + self.map_bounds.h - half_sprite,
+        );
     }
 
     fn update(&mut self, dt: f32) {
@@ -79,6 +102,8 @@ impl Player {
         } else {
             self.animation_frame = 0;
         }
+
+        self.clamp_position();
     }
 
     fn draw(&self) {
@@ -92,8 +117,8 @@ impl Player {
 
         // Calculate destination rectangle
         let dest = Rect::new(
-            self.position.x - SPRITE_SIZE/2.0,
-            self.position.y - SPRITE_SIZE/2.0,
+            self.position.x - SPRITE_SIZE / 2.0,
+            self.position.y - SPRITE_SIZE / 2.0,
             SPRITE_SIZE,
             SPRITE_SIZE,
         );
@@ -115,7 +140,7 @@ impl Player {
 
 #[macroquad::main("Grass Tile Map")]
 async fn main() {
-    // Load your grass texture
+    // Load your grass set_map_bounds
     let grass_texture = load_texture("./assets/Grass.png").await.unwrap();
     let mut player = Player::new().await;
 
@@ -125,16 +150,26 @@ async fn main() {
     // Load the map
     let tiled_map = tiled::load_map(&tiled_map_json, &[("Grass.png", grass_texture)], &[]).unwrap();
 
+    // retrieve map size
+    let map_width = tiled_map.raw_tiled_map.width as f32 * tiled_map.raw_tiled_map.tilewidth as f32;
+    let map_height =
+        tiled_map.raw_tiled_map.height as f32 * tiled_map.raw_tiled_map.tileheight as f32;
+
+    let map_bounds = Rect::new(
+        screen_width() / 2.0 - map_width / 2.0,
+        screen_height() / 2.0 - map_height / 2.0,
+        map_width,
+        map_height,
+    );
+
+    // updae player's value
+    player.set_map_bounds(map_bounds);
+
     loop {
         clear_background(WHITE);
 
-        let map_width =
-            tiled_map.raw_tiled_map.width as f32 * tiled_map.raw_tiled_map.tilewidth as f32;
-        let map_height =
-            tiled_map.raw_tiled_map.height as f32 * tiled_map.raw_tiled_map.tileheight as f32;
-
         tiled_map.draw_tiles(
-            "Tile Layer 1", // Match the exact layer name from your JSON
+            "Tile Layer 1",
             Rect::new(
                 screen_width() / 2.0 - map_width / 2.0,
                 screen_height() / 2.0 - map_height / 2.0,
