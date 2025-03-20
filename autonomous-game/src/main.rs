@@ -1,8 +1,71 @@
-use macroquad::{prelude::*, Error};
+use macroquad::prelude::*;
 use macroquad_tiled as tiled;
 
 const SPRITE_SIZE: f32 = 48.0;
 const ANIMATION_SPEED: f32 = 0.1;
+
+#[derive(Debug)]
+struct GameCamera {
+    position: Vec2,
+    viewport_size: Vec2,
+}
+
+impl GameCamera {
+    fn new() -> Self {
+        Self {
+            position: Vec2::new(0.0, 0.0),
+            viewport_size: Vec2::new(screen_width(), screen_height()),
+        }
+    }
+
+    fn update(&mut self, target_position: Vec2, map_bounds: Rect) {
+        // Center camera on target
+        self.position = target_position;
+
+        // Calculate camera bounds to prevent showing outside the map
+        let half_width = self.viewport_size.x / 2.0;
+
+        // since viewport is diverse from different devices, we have to filter out min & max
+        let (map_center, map_border) = (
+            map_bounds.x + map_bounds.w - half_width,
+            map_bounds.x + half_width,
+        );
+        let (min_x, max_x) = if map_center >= map_border {
+            (map_border, map_center)
+        } else {
+            (map_center, map_border)
+        };
+        // Clamp camera position to keep map in view
+        self.position.x = self.position.x.clamp(min_x, max_x);
+
+        let half_height = self.viewport_size.y / 2.0;
+        let (map_center, map_border) = (
+            map_bounds.y + map_bounds.h - half_height,
+            map_bounds.y + half_width,
+        );
+        let (min_y, max_y) = if map_center >= map_border {
+            (map_border, map_center)
+        } else {
+            (map_center, map_border)
+        };
+
+        self.position.y = self.position.y.clamp(min_y, max_y);
+    }
+
+    fn world_to_screen(&self, world_position: Vec2) -> Vec2 {
+        Vec2::new(
+            world_position.x - self.position.x + self.viewport_size.x / 2.0,
+            world_position.y - self.position.y + self.viewport_size.y / 2.0,
+        )
+    }
+
+    fn screen_to_world(&self, screen_position: Vec2) -> Vec2 {
+        Vec2::new(
+            screen_position.x + self.position.x - self.viewport_size.x / 2.0,
+            screen_position.y + self.position.y - self.viewport_size.y / 2.0,
+        )
+    }
+}
 
 struct Player {
     position: Vec2,
@@ -115,12 +178,10 @@ impl Player {
                     } else {
                         self.facing = Direction::Left;
                     }
+                } else if movement.y > 0.0 {
+                    self.facing = Direction::Down;
                 } else {
-                    if movement.y > 0.0 {
-                        self.facing = Direction::Down;
-                    } else {
-                        self.facing = Direction::Up;
-                    }
+                    self.facing = Direction::Up;
                 }
             }
         }
@@ -178,13 +239,14 @@ impl Player {
 }
 
 #[macroquad::main("Grass Tile Map")]
-async fn main(){
+async fn main() {
     // Load textures
     let grass_texture = load_texture("./assets/Grass.png").await.unwrap();
     let hill_texture = load_texture("./assets/Hills.png").await.unwrap();
     let water_texture = load_texture("./assets/Water.png").await.unwrap();
 
     let mut player = Player::new().await;
+    let mut camera = GameCamera::new();
 
     // Create a simple Tiled map JSON with just grass tiles
     let tiled_map_json = load_string("assets/map.json").await.unwrap();
@@ -198,21 +260,18 @@ async fn main(){
             ("Hills.png", hill_texture),
         ],
         &[],
-    ).unwrap();
+    )
+    .unwrap();
 
     // retrieve map size
     let map_width = tiled_map.raw_tiled_map.width as f32 * tiled_map.raw_tiled_map.tilewidth as f32;
     let map_height =
         tiled_map.raw_tiled_map.height as f32 * tiled_map.raw_tiled_map.tileheight as f32;
 
-    let map_bounds = Rect::new(
-        screen_width() / 2.0 - map_width / 2.0,
-        screen_height() / 2.0 - map_height / 2.0,
-        map_width,
-        map_height,
-    );
+    // Define the map bounds in world coordinates
+    let map_bounds = Rect::new(0.0, 0.0, map_width, map_height);
 
-    // updae player's value
+    // Set player's map bounds
     player.set_map_bounds(map_bounds);
 
     loop {
@@ -220,41 +279,59 @@ async fn main(){
 
         // Handle mouse click
         if is_mouse_button_pressed(MouseButton::Left) {
-            let mouse_position = Vec2::new(mouse_position().0, mouse_position().1);
+            let screen_position = Vec2::new(mouse_position().0, mouse_position().1);
+            let world_position = camera.screen_to_world(screen_position);
 
             // Check if click is within map bounds
-            if map_bounds.contains(mouse_position) {
-                player.target_position = Some(mouse_position);
+            if map_bounds.contains(world_position) {
+                player.target_position = Some(world_position);
                 player.target_effect_timer = 0.0;
                 player.wave_active = true;
             }
         }
 
+        // Update player
+        player.update(get_frame_time());
+
+        // Update camera to follow player
+        camera.update(player.position, map_bounds);
+
+        // Calculate camera offset for drawing
+        let camera_offset = Vec2::new(
+            screen_width() / 2.0 - camera.position.x,
+            screen_height() / 2.0 - camera.position.y,
+        );
+
+        // Draw map layers with camera offset
         tiled_map.draw_tiles(
             "Ocean",
-            Rect::new(
-                screen_width() / 2.0 - map_width / 2.0,
-                screen_height() / 2.0 - map_height / 2.0,
-                map_width,
-                map_height,
-            ),
+            Rect::new(camera_offset.x, camera_offset.y, map_width, map_height),
             None,
         );
-
         tiled_map.draw_tiles(
             "land",
-            Rect::new(
-                screen_width() / 2.0 - map_width / 2.0,
-                screen_height() / 2.0 - map_height / 2.0,
-                map_width,
-                map_height,
-            ),
+            Rect::new(camera_offset.x, camera_offset.y, map_width, map_height),
             None,
         );
 
-        // Update and draw player
-        player.update(get_frame_time());
-        player.draw();
+        // Draw player at center of screen
+        let player_screen_pos = camera.world_to_screen(player.position);
+        draw_texture_ex(
+            &player.texture,
+            player_screen_pos.x - SPRITE_SIZE / 2.0,
+            player_screen_pos.y - SPRITE_SIZE / 2.0,
+            WHITE,
+            DrawTextureParams {
+                source: Some(Rect::new(
+                    player.animation_frame as f32 * SPRITE_SIZE,
+                    player.facing.clone() as i32 as f32 * SPRITE_SIZE,
+                    SPRITE_SIZE,
+                    SPRITE_SIZE,
+                )),
+                dest_size: Some(Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
+                ..Default::default()
+            },
+        );
 
         // Draw target indicator if exists
         if let Some(target) = player.target_position {
@@ -269,9 +346,10 @@ async fn main(){
 
                 // Only draw if alpha is still visible
                 if alpha > 0.0 {
+                    let target_screen_pos = camera.world_to_screen(target);
                     draw_circle_lines(
-                        target.x,
-                        target.y,
+                        target_screen_pos.x,
+                        target_screen_pos.y,
                         size,
                         2.0, // line thickness
                         Color::new(1.0, 1.0, 1.0, alpha),
@@ -280,8 +358,8 @@ async fn main(){
                     // Inner wave
                     let inner_size = size * 0.5;
                     draw_circle_lines(
-                        target.x,
-                        target.y,
+                        target_screen_pos.x,
+                        target_screen_pos.y,
                         inner_size,
                         1.5, // slightly thinner
                         Color::new(1.0, 1.0, 1.0, alpha),
