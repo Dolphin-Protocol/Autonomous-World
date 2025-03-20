@@ -1,10 +1,6 @@
 let wasm;
 export const set_wasm = (w) => (wasm = w);
 
-function logPosition(x, y) {
-  // console.log(`Player at: (${x}, ${y})`);
-}
-
 const cachedTextDecoder =
   typeof TextDecoder !== "undefined"
     ? new TextDecoder("utf-8", { ignoreBOM: true, fatal: true })
@@ -35,6 +31,20 @@ function getStringFromWasm0(ptr, len) {
   return cachedTextDecoder.decode(
     getUint8ArrayMemory0().subarray(ptr, ptr + len),
   );
+}
+/**
+ * @param {number} speed
+ */
+export function set_player_speed(speed) {
+  wasm.set_player_speed(speed);
+}
+
+/**
+ * @returns {number}
+ */
+export function get_player_speed() {
+  const ret = wasm.get_player_speed();
+  return ret;
 }
 
 let WASM_VECTOR_LEN = 0;
@@ -114,59 +124,6 @@ export function greet(name) {
   wasm.greet(ptr0, len0);
 }
 
-const GameStateFinalization =
-  typeof FinalizationRegistry === "undefined"
-    ? { register: () => {}, unregister: () => {} }
-    : new FinalizationRegistry((ptr) =>
-        wasm.__wbg_gamestate_free(ptr >>> 0, 1),
-      );
-
-export class GameState {
-  __destroy_into_raw() {
-    const ptr = this.__wbg_ptr;
-    this.__wbg_ptr = 0;
-    GameStateFinalization.unregister(this);
-    return ptr;
-  }
-
-  free() {
-    const ptr = this.__destroy_into_raw();
-    wasm.__wbg_gamestate_free(ptr, 0);
-  }
-  /**
-   * @returns {number}
-   */
-  get speed() {
-    const ret = wasm.__wbg_get_gamestate_speed(this.__wbg_ptr);
-    return ret;
-  }
-  /**
-   * @param {number} arg0
-   */
-  set speed(arg0) {
-    wasm.__wbg_set_gamestate_speed(this.__wbg_ptr, arg0);
-  }
-  constructor() {
-    const ret = wasm.gamestate_new();
-    this.__wbg_ptr = ret >>> 0;
-    GameStateFinalization.register(this, this.__wbg_ptr, this);
-    return this;
-  }
-  /**
-   * @param {number} speed
-   */
-  set_player_speed(speed) {
-    wasm.gamestate_set_player_speed(this.__wbg_ptr, speed);
-  }
-  /**
-   * @returns {number}
-   */
-  get_player_speed() {
-    const ret = wasm.gamestate_get_player_speed(this.__wbg_ptr);
-    return ret;
-  }
-}
-
 async function __wbg_load(module, imports) {
   if (typeof Response === "function" && module instanceof Response) {
     if (typeof WebAssembly.instantiateStreaming === "function") {
@@ -200,9 +157,6 @@ async function __wbg_load(module, imports) {
 function __wbg_get_imports() {
   const imports = {};
   imports.wbg = {};
-  imports.wbg.__wbg_logPosition_6eb47f07a6701c31 = function (arg0, arg1) {
-    logPosition(arg0, arg1);
-  };
   imports.wbg.__wbg_log_242335a0403ba73a = function (arg0, arg1) {
     console.log(getStringFromWasm0(arg0, arg1));
   };
@@ -247,16 +201,6 @@ function initSync(module) {
   }
 
   return __wbg_get_imports();
-
-  __wbg_init_memory(imports);
-
-  if (!(module instanceof WebAssembly.Module)) {
-    module = new WebAssembly.Module(module);
-  }
-
-  const instance = new WebAssembly.Instance(module, imports);
-
-  return __wbg_finalize_init(instance, module);
 }
 
 async function __wbg_init(module_or_path) {

@@ -1,11 +1,28 @@
-use autonomous_game::{greet, log_player_position, GameState};
+use autonomous_game::greet;
 use macroquad::prelude::*;
 use macroquad_tiled as tiled;
+use wasm_bindgen::prelude::*;
 
 const SPRITE_SIZE: f32 = 48.0;
 const ANIMATION_SPEED: f32 = 0.1;
 
 static mut SHARED_STATE: GameState = GameState { speed: 0.0 };
+
+pub struct GameState {
+    pub speed: f32,
+}
+
+#[wasm_bindgen]
+pub fn set_player_speed(speed: f32) {
+    unsafe {
+        SHARED_STATE.speed = speed;
+    }
+}
+
+#[wasm_bindgen]
+pub fn get_player_speed() -> f32 {
+    unsafe { SHARED_STATE.speed }
+}
 
 struct Player {
     position: Vec2,
@@ -112,7 +129,6 @@ impl Player {
         }
 
         self.clamp_position();
-        log_player_position(self.position.x, self.position.y);
     }
 
     fn draw(&self) {

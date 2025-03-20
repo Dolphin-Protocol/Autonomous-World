@@ -1,6 +1,8 @@
 /* tslint:disable */
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
+export const set_player_speed: (a: number) => void;
+export const get_player_speed: () => number;
 export const main: (a: number, b: number) => number;
 export const file_loaded: (a: number) => void;
 export const crate_version: () => number;
@@ -22,12 +24,6 @@ export const on_files_dropped_start: () => void;
 export const on_files_dropped_finish: () => void;
 export const on_file_dropped: (a: number, b: number, c: number, d: number) => void;
 export const greet: (a: number, b: number) => void;
-export const __wbg_gamestate_free: (a: number, b: number) => void;
-export const __wbg_get_gamestate_speed: (a: number) => number;
-export const __wbg_set_gamestate_speed: (a: number, b: number) => void;
-export const gamestate_new: () => number;
-export const gamestate_set_player_speed: (a: number, b: number) => void;
-export const gamestate_get_player_speed: (a: number) => number;
 export const __wbindgen_export_0: WebAssembly.Table;
 export const __wbindgen_malloc: (a: number, b: number) => number;
 export const __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;

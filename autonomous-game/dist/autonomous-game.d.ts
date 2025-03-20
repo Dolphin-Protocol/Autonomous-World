@@ -1,18 +1,15 @@
 /* tslint:disable */
 /* eslint-disable */
+export function set_player_speed(speed: number): void;
+export function get_player_speed(): number;
 export function greet(name: string): void;
-export class GameState {
-  free(): void;
-  constructor();
-  set_player_speed(speed: number): void;
-  get_player_speed(): number;
-  speed: number;
-}
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
+  readonly set_player_speed: (a: number) => void;
+  readonly get_player_speed: () => number;
   readonly main: (a: number, b: number) => number;
   readonly file_loaded: (a: number) => void;
   readonly crate_version: () => number;
@@ -34,12 +31,6 @@ export interface InitOutput {
   readonly on_files_dropped_finish: () => void;
   readonly on_file_dropped: (a: number, b: number, c: number, d: number) => void;
   readonly greet: (a: number, b: number) => void;
-  readonly __wbg_gamestate_free: (a: number, b: number) => void;
-  readonly __wbg_get_gamestate_speed: (a: number) => number;
-  readonly __wbg_set_gamestate_speed: (a: number, b: number) => void;
-  readonly gamestate_new: () => number;
-  readonly gamestate_set_player_speed: (a: number, b: number) => void;
-  readonly gamestate_get_player_speed: (a: number) => number;
   readonly __wbindgen_export_0: WebAssembly.Table;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;

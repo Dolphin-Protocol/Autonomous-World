@@ -1,23 +1,10 @@
-import init, { set_wasm, GameState } from "./dist/autonomous-game.js";
+import init, {
+  set_wasm,
+  get_player_speed,
+  set_player_speed,
+} from "./dist/autonomous-game.js";
 
 // state
-let gameState = null;
-async function initGameState() {
-  try {
-    gameState = new GameState();
-    // Make the function globally available
-    window.checkPlayerSpeed = function () {
-      if (gameState) {
-        console.log(gameState.speed);
-      } else {
-        console.log("GameState not initialized yet");
-      }
-    };
-  } catch (error) {
-    console.error("Failed to initialize GameState:", error);
-  }
-}
-
 // wasm setup
 async function impl_run() {
   let wbg = await init();
@@ -25,7 +12,6 @@ async function impl_run() {
     register_plugin: (a) => (a.wbg = wbg),
     on_init: () => {
       set_wasm(wasm_exports);
-      initGameState();
     },
     version: "0.0.1",
     name: "wbg",
@@ -42,9 +28,9 @@ window.run = function () {
 };
 
 window.checkPlayerSpeed = function () {
-  console.log(gameState.speed);
+  console.log(get_player_speed());
 };
 
-window.setPlayerSpeed = async function (speed) {
-  gameState.set_player_speed(speed);
+window.setPlayerSpeed = function (speed) {
+  set_player_speed(speed);
 };
