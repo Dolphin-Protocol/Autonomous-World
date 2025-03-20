@@ -8,6 +8,7 @@ const ANIMATION_SPEED: f32 = 0.1;
 struct GameCamera {
     position: Vec2,
     viewport_size: Vec2,
+    zoom: f32,
 }
 
 impl GameCamera {
@@ -15,6 +16,7 @@ impl GameCamera {
         Self {
             position: Vec2::new(0.0, 0.0),
             viewport_size: Vec2::new(screen_width(), screen_height()),
+            zoom: 2.0, // Increase this value to zoom in more (e.g., 2.0 means 2x zoom)
         }
     }
 
@@ -54,15 +56,15 @@ impl GameCamera {
 
     fn world_to_screen(&self, world_position: Vec2) -> Vec2 {
         Vec2::new(
-            world_position.x - self.position.x + self.viewport_size.x / 2.0,
-            world_position.y - self.position.y + self.viewport_size.y / 2.0,
+            (world_position.x - self.position.x) * self.zoom + self.viewport_size.x / 2.0,
+            (world_position.y - self.position.y) * self.zoom + self.viewport_size.y / 2.0,
         )
     }
 
     fn screen_to_world(&self, screen_position: Vec2) -> Vec2 {
         Vec2::new(
-            screen_position.x + self.position.x - self.viewport_size.x / 2.0,
-            screen_position.y + self.position.y - self.viewport_size.y / 2.0,
+            (screen_position.x - self.viewport_size.x / 2.0) / self.zoom + self.position.x,
+            (screen_position.y - self.viewport_size.y / 2.0) / self.zoom + self.position.y,
         )
     }
 }
@@ -297,20 +299,31 @@ async fn main() {
         camera.update(player.position, map_bounds);
 
         // Calculate camera offset for drawing
+        // Calculate camera offset for drawing
         let camera_offset = Vec2::new(
-            screen_width() / 2.0 - camera.position.x,
-            screen_height() / 2.0 - camera.position.y,
+            screen_width() / 2.0 - camera.position.x * camera.zoom,
+            screen_height() / 2.0 - camera.position.y * camera.zoom,
         );
 
-        // Draw map layers with camera offset
+        // Draw map layers with camera offset and zoom
         tiled_map.draw_tiles(
             "Ocean",
-            Rect::new(camera_offset.x, camera_offset.y, map_width, map_height),
+            Rect::new(
+                camera_offset.x,
+                camera_offset.y,
+                map_width * camera.zoom,
+                map_height * camera.zoom,
+            ),
             None,
         );
         tiled_map.draw_tiles(
             "land",
-            Rect::new(camera_offset.x, camera_offset.y, map_width, map_height),
+            Rect::new(
+                camera_offset.x,
+                camera_offset.y,
+                map_width * camera.zoom,
+                map_height * camera.zoom,
+            ),
             None,
         );
 
@@ -318,8 +331,8 @@ async fn main() {
         let player_screen_pos = camera.world_to_screen(player.position);
         draw_texture_ex(
             &player.texture,
-            player_screen_pos.x - SPRITE_SIZE / 2.0,
-            player_screen_pos.y - SPRITE_SIZE / 2.0,
+            player_screen_pos.x - (SPRITE_SIZE * camera.zoom) / 2.0,
+            player_screen_pos.y - (SPRITE_SIZE * camera.zoom) / 2.0,
             WHITE,
             DrawTextureParams {
                 source: Some(Rect::new(
@@ -328,7 +341,10 @@ async fn main() {
                     SPRITE_SIZE,
                     SPRITE_SIZE,
                 )),
-                dest_size: Some(Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
+                dest_size: Some(Vec2::new(
+                    SPRITE_SIZE * camera.zoom,
+                    SPRITE_SIZE * camera.zoom,
+                )),
                 ..Default::default()
             },
         );
@@ -368,7 +384,7 @@ async fn main() {
                     player.wave_active = false;
                 }
             }
-        }
+        };
 
         draw_text(&format!("FPS: {}", get_fps()), 10.0, 20.0, 20.0, BLACK);
 
