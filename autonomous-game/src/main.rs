@@ -1,4 +1,4 @@
-use macroquad::prelude::*;
+use macroquad::{prelude::*, Error};
 use macroquad_tiled as tiled;
 
 const SPRITE_SIZE: f32 = 48.0;
@@ -178,16 +178,27 @@ impl Player {
 }
 
 #[macroquad::main("Grass Tile Map")]
-async fn main() {
-    // Load your grass set_map_bounds
+async fn main(){
+    // Load textures
     let grass_texture = load_texture("./assets/Grass.png").await.unwrap();
+    let hill_texture = load_texture("./assets/Hills.png").await.unwrap();
+    let water_texture = load_texture("./assets/Water.png").await.unwrap();
+
     let mut player = Player::new().await;
 
     // Create a simple Tiled map JSON with just grass tiles
-    let tiled_map_json = load_string("assets/world.json").await.unwrap();
+    let tiled_map_json = load_string("assets/map.json").await.unwrap();
 
     // Load the map
-    let tiled_map = tiled::load_map(&tiled_map_json, &[("Grass.png", grass_texture)], &[]).unwrap();
+    let tiled_map = tiled::load_map(
+        &tiled_map_json,
+        &[
+            ("Grass.png", grass_texture),
+            ("Water.png", water_texture),
+            ("Hills.png", hill_texture),
+        ],
+        &[],
+    ).unwrap();
 
     // retrieve map size
     let map_width = tiled_map.raw_tiled_map.width as f32 * tiled_map.raw_tiled_map.tilewidth as f32;
@@ -220,7 +231,18 @@ async fn main() {
         }
 
         tiled_map.draw_tiles(
-            "Tile Layer 1",
+            "Ocean",
+            Rect::new(
+                screen_width() / 2.0 - map_width / 2.0,
+                screen_height() / 2.0 - map_height / 2.0,
+                map_width,
+                map_height,
+            ),
+            None,
+        );
+
+        tiled_map.draw_tiles(
+            "land",
             Rect::new(
                 screen_width() / 2.0 - map_width / 2.0,
                 screen_height() / 2.0 - map_height / 2.0,
