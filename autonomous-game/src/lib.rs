@@ -5,15 +5,16 @@ pub fn greet(name: &str) {
     log(&format!("Hello, {}!", name));
 }
 
+// calling the functino in JS
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
+    pub fn log(s: &str);
 
-    // #[wasm_bindgen(js_name = logPosition)]
-    // fn log_position(x: f32, y: f32);
+    #[wasm_bindgen(js_name = logPosition)]
+    fn log_position(x: f32, y: f32);
 }
 
-// pub fn log_player_position(x: f32, y: f32) {
-//     log_position(x, y);
-// }
+pub fn log_player_position(x: f32, y: f32) {
+    log_position(x, y);
+}

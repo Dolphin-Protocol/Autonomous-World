@@ -1,4 +1,4 @@
-use autonomous_game::greet;
+use autonomous_game::{greet, log, log_player_position};
 use macroquad::prelude::*;
 use macroquad_tiled as tiled;
 use wasm_bindgen::prelude::*;
@@ -77,6 +77,17 @@ impl Player {
             self.map_bounds.y + half_sprite,
             self.map_bounds.y + self.map_bounds.h - half_sprite,
         );
+
+        // testing
+        if self.position.x == self.map_bounds.x + half_sprite {
+            log("to the left end");
+            log_player_position(self.position.x, self.position.y);
+        };
+
+        if self.position.x == self.map_bounds.x + self.map_bounds.w - half_sprite {
+            log("to the right end");
+            log_player_position(self.position.x, self.position.y);
+        };
     }
 
     fn update(&mut self, dt: f32) {

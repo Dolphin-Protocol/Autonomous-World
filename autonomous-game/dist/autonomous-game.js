@@ -1,6 +1,11 @@
 let wasm;
 export const set_wasm = (w) => (wasm = w);
 
+// callback from Rust
+function logPosition(x, y) {
+  console.log(`This is callback from rust. Player pos: ${x}, ${y}`);
+}
+
 const cachedTextDecoder =
   typeof TextDecoder !== "undefined"
     ? new TextDecoder("utf-8", { ignoreBOM: true, fatal: true })
@@ -157,6 +162,9 @@ async function __wbg_load(module, imports) {
 function __wbg_get_imports() {
   const imports = {};
   imports.wbg = {};
+  imports.wbg.__wbg_logPosition_6eb47f07a6701c31 = function (arg0, arg1) {
+    logPosition(arg0, arg1);
+  };
   imports.wbg.__wbg_log_242335a0403ba73a = function (arg0, arg1) {
     console.log(getStringFromWasm0(arg0, arg1));
   };
@@ -201,6 +209,16 @@ function initSync(module) {
   }
 
   return __wbg_get_imports();
+
+  __wbg_init_memory(imports);
+
+  if (!(module instanceof WebAssembly.Module)) {
+    module = new WebAssembly.Module(module);
+  }
+
+  const instance = new WebAssembly.Instance(module, imports);
+
+  return __wbg_finalize_init(instance, module);
 }
 
 async function __wbg_init(module_or_path) {
@@ -220,6 +238,20 @@ async function __wbg_init(module_or_path) {
     module_or_path = new URL("autonomous-game_bg.wasm", import.meta.url);
   }
   return __wbg_get_imports();
+
+  if (
+    typeof module_or_path === "string" ||
+    (typeof Request === "function" && module_or_path instanceof Request) ||
+    (typeof URL === "function" && module_or_path instanceof URL)
+  ) {
+    module_or_path = fetch(module_or_path);
+  }
+
+  __wbg_init_memory(imports);
+
+  const { instance, module } = await __wbg_load(await module_or_path, imports);
+
+  return __wbg_finalize_init(instance, module);
 }
 
 export { initSync };
