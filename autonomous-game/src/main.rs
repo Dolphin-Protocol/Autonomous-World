@@ -16,7 +16,7 @@ impl GameCamera {
         Self {
             position: Vec2::new(0.0, 0.0),
             viewport_size: Vec2::new(screen_width(), screen_height()),
-            zoom: 2.0, // Increase this value to zoom in more (e.g., 2.0 means 2x zoom)
+            zoom: 1.5, // Increase this value to zoom in more (e.g., 2.0 means 2x zoom)
         }
     }
 
@@ -265,13 +265,26 @@ async fn main() {
     )
     .unwrap();
 
-    // retrieve map size
+    // set land area as boundary;
     let map_width = tiled_map.raw_tiled_map.width as f32 * tiled_map.raw_tiled_map.tilewidth as f32;
     let map_height =
         tiled_map.raw_tiled_map.height as f32 * tiled_map.raw_tiled_map.tileheight as f32;
 
-    // Define the map bounds in world coordinates
-    let map_bounds = Rect::new(0.0, 0.0, map_width, map_height);
+    // Calculate the bounds for the land area (32x32 tiles in center)
+    let tile_size = 16.0;
+    let total_tiles = 60; // total map size in tiles
+    let land_tiles = 32;  // land area size in tiles
+    
+    // Calculate the offset to center the land area
+    let offset = (total_tiles - land_tiles) as f32 * tile_size / 2.0;
+    
+    // Define the map bounds for just the land area
+    let map_bounds = Rect::new(
+        offset,                    // x start
+        offset,                    // y start
+        land_tiles as f32 * tile_size, // width (32 tiles * 16 pixels)
+        land_tiles as f32 * tile_size  // height (32 tiles * 16 pixels)
+    );
 
     // Set player's map bounds
     player.set_map_bounds(map_bounds);
