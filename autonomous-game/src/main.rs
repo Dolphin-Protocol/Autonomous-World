@@ -11,7 +11,10 @@ struct Player {
     frame_timer: f32,
     facing: Direction,
     is_moving: bool,
-    map_bounds: Rect, // Add map bounds
+    map_bounds: Rect,
+    target_position: Option<Vec2>,
+    target_effect_timer: f32,
+    wave_active: bool,
 }
 
 #[derive(PartialEq, Clone)]
@@ -36,7 +39,10 @@ impl Player {
             frame_timer: 0.0,
             facing: Direction::Down,
             is_moving: false,
-            map_bounds: Rect::new(0.0, 0.0, 0.0, 0.0), // Will be set later
+            map_bounds: Rect::new(0.0, 0.0, 0.0, 0.0),
+            target_position: None,
+            target_effect_timer: 0.0,
+            wave_active: false,
         }
     }
 
@@ -64,33 +70,66 @@ impl Player {
         let mut movement = Vec2::ZERO;
         self.is_moving = false;
 
+        // Handle keyboard input
         if is_key_down(KeyCode::Right) {
             movement.x += 1.0;
             self.facing = Direction::Right;
             self.is_moving = true;
+            self.target_position = None; // Cancel mouse movement when using keyboard
         }
         if is_key_down(KeyCode::Left) {
             movement.x -= 1.0;
             self.facing = Direction::Left;
             self.is_moving = true;
+            self.target_position = None;
         }
         if is_key_down(KeyCode::Up) {
             movement.y -= 1.0;
             self.facing = Direction::Up;
             self.is_moving = true;
+            self.target_position = None;
         }
         if is_key_down(KeyCode::Down) {
             movement.y += 1.0;
             self.facing = Direction::Down;
             self.is_moving = true;
+            self.target_position = None;
         }
 
-        // Normalize diagonal movement
+        // Handle mouse movement if we have a target position
+        if let Some(target) = self.target_position {
+            let to_target = target - self.position;
+            let distance = to_target.length();
+
+            // If we're close enough to the target, stop moving
+            if distance < 2.0 {
+                self.target_position = None;
+            } else {
+                movement = to_target.normalize();
+                self.is_moving = true;
+
+                // Update facing direction based on movement
+                if movement.x.abs() > movement.y.abs() {
+                    if movement.x > 0.0 {
+                        self.facing = Direction::Right;
+                    } else {
+                        self.facing = Direction::Left;
+                    }
+                } else {
+                    if movement.y > 0.0 {
+                        self.facing = Direction::Down;
+                    } else {
+                        self.facing = Direction::Up;
+                    }
+                }
+            }
+        }
+
+        // Apply movement
         if movement.length() > 0.0 {
             movement = movement.normalize();
+            self.position += movement * speed * dt;
         }
-
-        self.position += movement * speed * dt;
 
         // Update animation
         if self.is_moving {
@@ -168,6 +207,18 @@ async fn main() {
     loop {
         clear_background(WHITE);
 
+        // Handle mouse click
+        if is_mouse_button_pressed(MouseButton::Left) {
+            let mouse_position = Vec2::new(mouse_position().0, mouse_position().1);
+
+            // Check if click is within map bounds
+            if map_bounds.contains(mouse_position) {
+                player.target_position = Some(mouse_position);
+                player.target_effect_timer = 0.0;
+                player.wave_active = true;
+            }
+        }
+
         tiled_map.draw_tiles(
             "Tile Layer 1",
             Rect::new(
@@ -182,6 +233,42 @@ async fn main() {
         // Update and draw player
         player.update(get_frame_time());
         player.draw();
+
+        // Draw target indicator if exists
+        if let Some(target) = player.target_position {
+            if player.wave_active {
+                // Update wave timer
+                player.target_effect_timer += get_frame_time() * 2.0;
+
+                // Create single splash effect
+                let wave_time = player.target_effect_timer;
+                let size = 15.0 * wave_time; // Grow from 0 to 20
+                let alpha = 0.8 * (1.0 - wave_time); // Fade out as it grows
+
+                // Only draw if alpha is still visible
+                if alpha > 0.0 {
+                    draw_circle_lines(
+                        target.x,
+                        target.y,
+                        size,
+                        2.0, // line thickness
+                        Color::new(1.0, 1.0, 1.0, alpha),
+                    );
+
+                    // Inner wave
+                    let inner_size = size * 0.5;
+                    draw_circle_lines(
+                        target.x,
+                        target.y,
+                        inner_size,
+                        1.5, // slightly thinner
+                        Color::new(1.0, 1.0, 1.0, alpha),
+                    );
+                } else {
+                    player.wave_active = false;
+                }
+            }
+        }
 
         draw_text(&format!("FPS: {}", get_fps()), 10.0, 20.0, 20.0, BLACK);
 
