@@ -211,35 +211,65 @@ impl Player {
         self.clamp_position();
     }
 
-    fn draw(&self) {
-        // Calculate source rectangle from sprite sheet
-        let source = Rect::new(
-            self.animation_frame as f32 * SPRITE_SIZE,
-            self.facing.clone() as i32 as f32 * SPRITE_SIZE,
-            SPRITE_SIZE,
-            SPRITE_SIZE,
-        );
-
-        // Calculate destination rectangle
-        let dest = Rect::new(
-            self.position.x - SPRITE_SIZE / 2.0,
-            self.position.y - SPRITE_SIZE / 2.0,
-            SPRITE_SIZE,
-            SPRITE_SIZE,
-        );
-
-        // Draw the sprite
+    fn draw_player(&self, camera: &GameCamera) {
+        let player_screen_pos = camera.world_to_screen(self.position);
         draw_texture_ex(
             &self.texture,
-            dest.x,
-            dest.y,
+            player_screen_pos.x - (SPRITE_SIZE * camera.zoom) / 2.0,
+            player_screen_pos.y - (SPRITE_SIZE * camera.zoom) / 2.0,
             WHITE,
             DrawTextureParams {
-                source: Some(source),
-                dest_size: Some(Vec2::new(SPRITE_SIZE, SPRITE_SIZE)),
+                source: Some(Rect::new(
+                    self.animation_frame as f32 * SPRITE_SIZE,
+                    self.facing.clone() as i32 as f32 * SPRITE_SIZE,
+                    SPRITE_SIZE,
+                    SPRITE_SIZE,
+                )),
+                dest_size: Some(Vec2::new(
+                    SPRITE_SIZE * camera.zoom,
+                    SPRITE_SIZE * camera.zoom,
+                )),
                 ..Default::default()
             },
         );
+    }
+
+    fn draw_wave_effect(&mut self, camera: &GameCamera) {
+        if let Some(target) = self.target_position {
+            if self.wave_active {
+                // Update wave timer
+                self.target_effect_timer += get_frame_time() * 2.0;
+
+                // Create single splash effect
+                let wave_time = self.target_effect_timer;
+                let size = 15.0 * wave_time; // Grow from 0 to 20
+                let alpha = 0.8 * (1.0 - wave_time); // Fade out as it grows
+
+                // Only draw if alpha is still visible
+                if alpha > 0.0 {
+                    let target_screen_pos = camera.world_to_screen(target);
+                    draw_circle_lines(
+                        target_screen_pos.x,
+                        target_screen_pos.y,
+                        size,
+                        2.0, // line thickness
+                        Color::new(1.0, 1.0, 1.0, alpha),
+                    );
+
+                    // Inner wave
+                    let inner_size = size * 0.5;
+                    draw_circle_lines(
+                        target_screen_pos.x,
+                        target_screen_pos.y,
+                        inner_size,
+                        1.5, // slightly thinner
+                        Color::new(1.0, 1.0, 1.0, alpha),
+                    );
+                } else {
+                    self.wave_active = false;
+                }
+            }
+        };
     }
 }
 
@@ -338,63 +368,10 @@ async fn main() -> Result<Resources, macroquad::Error> {
         );
 
         // Draw player at center of screen
-        let player_screen_pos = camera.world_to_screen(player.position);
-        draw_texture_ex(
-            &player.texture,
-            player_screen_pos.x - (SPRITE_SIZE * camera.zoom) / 2.0,
-            player_screen_pos.y - (SPRITE_SIZE * camera.zoom) / 2.0,
-            WHITE,
-            DrawTextureParams {
-                source: Some(Rect::new(
-                    player.animation_frame as f32 * SPRITE_SIZE,
-                    player.facing.clone() as i32 as f32 * SPRITE_SIZE,
-                    SPRITE_SIZE,
-                    SPRITE_SIZE,
-                )),
-                dest_size: Some(Vec2::new(
-                    SPRITE_SIZE * camera.zoom,
-                    SPRITE_SIZE * camera.zoom,
-                )),
-                ..Default::default()
-            },
-        );
+        player.draw_player(&camera);
 
         // Draw target indicator if exists
-        if let Some(target) = player.target_position {
-            if player.wave_active {
-                // Update wave timer
-                player.target_effect_timer += get_frame_time() * 2.0;
-
-                // Create single splash effect
-                let wave_time = player.target_effect_timer;
-                let size = 15.0 * wave_time; // Grow from 0 to 20
-                let alpha = 0.8 * (1.0 - wave_time); // Fade out as it grows
-
-                // Only draw if alpha is still visible
-                if alpha > 0.0 {
-                    let target_screen_pos = camera.world_to_screen(target);
-                    draw_circle_lines(
-                        target_screen_pos.x,
-                        target_screen_pos.y,
-                        size,
-                        2.0, // line thickness
-                        Color::new(1.0, 1.0, 1.0, alpha),
-                    );
-
-                    // Inner wave
-                    let inner_size = size * 0.5;
-                    draw_circle_lines(
-                        target_screen_pos.x,
-                        target_screen_pos.y,
-                        inner_size,
-                        1.5, // slightly thinner
-                        Color::new(1.0, 1.0, 1.0, alpha),
-                    );
-                } else {
-                    player.wave_active = false;
-                }
-            }
-        };
+        player.draw_wave_effect(&camera);
 
         draw_text(&format!("FPS: {}", get_fps()), 10.0, 20.0, 20.0, BLACK);
 
