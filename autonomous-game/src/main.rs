@@ -1,5 +1,6 @@
 use macroquad::prelude::*;
 use macroquad_tiled as tiled;
+use miniquad::log;
 
 const SPRITE_SIZE: f32 = 48.0;
 const ANIMATION_SPEED: f32 = 0.1;
@@ -16,7 +17,7 @@ impl GameCamera {
         Self {
             position: Vec2::new(0.0, 0.0),
             viewport_size: Vec2::new(screen_width(), screen_height()),
-            zoom: 1.5, // Increase this value to zoom in more (e.g., 2.0 means 2x zoom)
+            zoom: 1.5,
         }
     }
 
@@ -273,17 +274,17 @@ async fn main() {
     // Calculate the bounds for the land area (32x32 tiles in center)
     let tile_size = 16.0;
     let total_tiles = 60; // total map size in tiles
-    let land_tiles = 32;  // land area size in tiles
-    
+    let land_tiles = 32; // land area size in tiles
+
     // Calculate the offset to center the land area
     let offset = (total_tiles - land_tiles) as f32 * tile_size / 2.0;
-    
+
     // Define the map bounds for just the land area
     let map_bounds = Rect::new(
-        offset,                    // x start
-        offset,                    // y start
+        offset,                        // x start
+        offset,                        // y start
         land_tiles as f32 * tile_size, // width (32 tiles * 16 pixels)
-        land_tiles as f32 * tile_size  // height (32 tiles * 16 pixels)
+        land_tiles as f32 * tile_size, // height (32 tiles * 16 pixels)
     );
 
     // Set player's map bounds
