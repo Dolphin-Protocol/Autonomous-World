@@ -1,4 +1,5 @@
 use macroquad::prelude::*;
+use macroquad_platformer::*;
 use macroquad_tiled as tiled;
 
 const SPRITE_SIZE: f32 = 48.0;
@@ -86,6 +87,7 @@ struct Player {
     target_position: Option<Vec2>,
     target_effect_timer: f32,
     wave_active: bool,
+    collider: Actor,
 }
 
 #[derive(PartialEq, Clone)]
@@ -97,14 +99,17 @@ enum Direction {
 }
 
 impl Player {
-    async fn new() -> Self {
+    async fn new(world: &mut World) -> Self {
         let texture = load_texture("assets/BasicCharacterSpritesheet.png")
             .await
             .unwrap();
         texture.set_filter(FilterMode::Nearest);
 
+        // Create player collider: collision check minimize at 16px
+        let position = Vec2::new(screen_width() / 2.0, screen_height() / 2.0);
+        let collider = world.add_actor(position, 16, 16);
         Self {
-            position: Vec2::new(screen_width() / 2.0, screen_height() / 2.0),
+            position,
             texture,
             animation_frame: 0,
             frame_timer: 0.0,
@@ -114,6 +119,7 @@ impl Player {
             target_position: None,
             target_effect_timer: 0.0,
             wave_active: false,
+            collider,
         }
     }
 
@@ -136,7 +142,7 @@ impl Player {
         );
     }
 
-    fn update(&mut self, dt: f32) {
+    fn update(&mut self, dt: f32, world: &mut World) {
         let speed = 200.0;
         let mut movement = Vec2::ZERO;
         self.is_moving = false;
@@ -194,10 +200,23 @@ impl Player {
             }
         }
 
-        // Apply movement
+        // Apply movement with collision detection
         if movement.length() > 0.0 {
             movement = movement.normalize();
-            self.position += movement * speed * dt;
+            let desired_position = self.position + movement * speed * dt;
+
+            // Update collider position
+            world.set_actor_position(self.collider, desired_position);
+
+            // If no collision occurred, update player position
+            let half_tile = 8.;
+            if !world.collide_check(self.collider, desired_position + vec2(-half_tile, -half_tile)) {
+                self.position = desired_position;
+            } else {
+                // Reset collider position if collision occurred
+                world.set_actor_position(self.collider, self.position);
+
+            }
         }
 
         // Update animation
@@ -280,7 +299,10 @@ impl Player {
 async fn main() -> Result<Resources, macroquad::Error> {
     let resources = Resources::new().await?;
 
-    let mut player = Player::new().await;
+    // Initialize collision world
+    let mut world = World::new();
+
+    let mut player = Player::new(&mut world).await;
     let mut camera = GameCamera::new();
 
     // Load the map
@@ -295,10 +317,6 @@ async fn main() -> Result<Resources, macroquad::Error> {
         &[],
     )
     .unwrap();
-
-    for (x, y, tile) in tiled_map.tiles("Ocean", None) {
-        println!("{}, {}, {:#?}", x, y, tile);
-    }
 
     // set land area as boundary;
     let map_width = tiled_map.raw_tiled_map.width as f32 * tiled_map.raw_tiled_map.tilewidth as f32;
@@ -323,6 +341,22 @@ async fn main() -> Result<Resources, macroquad::Error> {
     // Set player's map bounds
     player.set_map_bounds(map_bounds);
 
+    // Create colliders for house tiles
+    let map_width_tiles = tiled_map.raw_tiled_map.width as usize;
+    let map_height_tiles = tiled_map.raw_tiled_map.height as usize;
+    let mut static_colliders = vec![Tile::Empty; map_width_tiles * map_height_tiles];
+
+    // Set up colliders for house tiles
+    for (x, y, tile) in tiled_map.tiles("House", None) {
+        if tile.is_some() {
+            let index = (y as usize) * map_width_tiles + (x as usize);
+            static_colliders[index] = Tile::Solid;
+        }
+    }
+
+    // Add the static colliders to the world
+    world.add_static_tiled_layer(static_colliders, 16.0, 16.0, map_width_tiles, 1);
+
     loop {
         clear_background(WHITE);
         camera.update_viewport_size();
@@ -340,8 +374,8 @@ async fn main() -> Result<Resources, macroquad::Error> {
             }
         }
 
-        // Update player
-        player.update(get_frame_time());
+        // Update player with collision world
+        player.update(get_frame_time(), &mut world);
 
         // Update camera to follow player
         camera.update(player.position);
