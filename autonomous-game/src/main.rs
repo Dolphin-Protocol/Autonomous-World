@@ -45,7 +45,7 @@ impl GameCamera {
         Self {
             position: Vec2::new(0.0, 0.0),
             viewport_size: Vec2::new(screen_width(), screen_height()),
-            zoom: 1.0,
+            zoom: 2.0,
         }
     }
 
@@ -53,38 +53,8 @@ impl GameCamera {
         self.viewport_size = Vec2::new(screen_width(), screen_height());
     }
 
-    fn update(&mut self, target_position: Vec2, map_bounds: Rect) {
-        // Center camera on target
+    fn update(&mut self, target_position: Vec2) {
         self.position = target_position;
-
-        // Calculate camera bounds to prevent showing outside the map
-        let half_width = self.viewport_size.x / 2.0;
-
-        // since viewport is diverse from different devices, we have to filter out min & max
-        let (map_center, map_border) = (
-            map_bounds.x + map_bounds.w - half_width,
-            map_bounds.x + half_width,
-        );
-        let (min_x, max_x) = if map_center >= map_border {
-            (map_border, map_center)
-        } else {
-            (map_center, map_border)
-        };
-        // Clamp camera position to keep map in view
-        self.position.x = self.position.x.clamp(min_x, max_x);
-
-        let half_height = self.viewport_size.y / 2.0;
-        let (map_center, map_border) = (
-            map_bounds.y + map_bounds.h - half_height,
-            map_bounds.y + half_width,
-        );
-        let (min_y, max_y) = if map_center >= map_border {
-            (map_border, map_center)
-        } else {
-            (map_center, map_border)
-        };
-
-        self.position.y = self.position.y.clamp(min_y, max_y);
     }
 
     fn world_to_screen(&self, world_position: Vec2) -> Vec2 {
@@ -304,7 +274,6 @@ async fn main() -> Result<Resources, macroquad::Error> {
 
     // Calculate the offset to center the land area
     let offset = (total_tiles - land_tiles) as f32 * tile_size / 2.0;
-
     // Define the map bounds for just the land area
     let map_bounds = Rect::new(
         offset,                        // x start
@@ -337,7 +306,7 @@ async fn main() -> Result<Resources, macroquad::Error> {
         player.update(get_frame_time());
 
         // Update camera to follow player
-        camera.update(player.position, map_bounds);
+        camera.update(player.position);
 
         // Calculate camera offset for drawing
         // Calculate camera offset for drawing
