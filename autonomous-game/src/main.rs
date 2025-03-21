@@ -1,9 +1,37 @@
 use macroquad::prelude::*;
 use macroquad_tiled as tiled;
-use miniquad::log;
 
 const SPRITE_SIZE: f32 = 48.0;
 const ANIMATION_SPEED: f32 = 0.1;
+
+struct Resources {
+    grass_texture: Texture2D,
+    hills_texture: Texture2D,
+    water_texture: Texture2D,
+    tiled_map_json: String,
+}
+
+impl Resources {
+    async fn new() -> Result<Resources, macroquad::Error> {
+        // Load texture
+        let grass_texture = load_texture("./assets/Grass.png").await?;
+        let hills_texture = load_texture("./assets/Hills.png").await?;
+        let water_texture = load_texture("./assets/Water.png").await?;
+        // Load sounds
+        // Load image
+
+        // Create a simple Tiled map JSON
+        let tiled_map_json = load_string("assets/map.json").await.unwrap();
+        let resources = Resources {
+            grass_texture,
+            hills_texture,
+            water_texture,
+            tiled_map_json,
+        };
+
+        Ok(resources)
+    }
+}
 
 #[derive(Debug)]
 struct GameCamera {
@@ -17,8 +45,12 @@ impl GameCamera {
         Self {
             position: Vec2::new(0.0, 0.0),
             viewport_size: Vec2::new(screen_width(), screen_height()),
-            zoom: 1.5,
+            zoom: 1.0,
         }
+    }
+
+    fn update_viewport_size(&mut self) {
+        self.viewport_size = Vec2::new(screen_width(), screen_height());
     }
 
     fn update(&mut self, target_position: Vec2, map_bounds: Rect) {
@@ -242,25 +274,19 @@ impl Player {
 }
 
 #[macroquad::main("Grass Tile Map")]
-async fn main() {
-    // Load textures
-    let grass_texture = load_texture("./assets/Grass.png").await.unwrap();
-    let hill_texture = load_texture("./assets/Hills.png").await.unwrap();
-    let water_texture = load_texture("./assets/Water.png").await.unwrap();
+async fn main() -> Result<Resources, macroquad::Error> {
+    let resources = Resources::new().await?;
 
     let mut player = Player::new().await;
     let mut camera = GameCamera::new();
 
-    // Create a simple Tiled map JSON with just grass tiles
-    let tiled_map_json = load_string("assets/map.json").await.unwrap();
-
     // Load the map
     let tiled_map = tiled::load_map(
-        &tiled_map_json,
+        &resources.tiled_map_json,
         &[
-            ("Grass.png", grass_texture),
-            ("Water.png", water_texture),
-            ("Hills.png", hill_texture),
+            ("Grass.png", resources.grass_texture),
+            ("Water.png", resources.water_texture),
+            ("Hills.png", resources.hills_texture),
         ],
         &[],
     )
@@ -292,6 +318,7 @@ async fn main() {
 
     loop {
         clear_background(WHITE);
+        camera.update_viewport_size();
 
         // Handle mouse click
         if is_mouse_button_pressed(MouseButton::Left) {
