@@ -31,6 +31,7 @@ name = "autonomous-game"
 version = "0.1.0"
 dependencies = [
  "macroquad",
+ "macroquad-platformer",
  "macroquad-tiled",
 ]
 
@@ -149,6 +150,15 @@ dependencies = [
  "miniquad",
  "quad-rand",
  "slotmap",
+]
+
+[[package]]
+name = "macroquad-platformer"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "96830174cdb51092a0726fabe07efb0d20eaeb9f15fd4c64ffcb8d49a7313aa8"
+dependencies = [
+ "macroquad",
 ]
 
 [[package]]

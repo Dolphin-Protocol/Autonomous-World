@@ -8,6 +8,7 @@ struct Resources {
     grass_texture: Texture2D,
     hills_texture: Texture2D,
     water_texture: Texture2D,
+    wooden_house_wall_texture: Texture2D,
     tiled_map_json: String,
 }
 
@@ -17,6 +18,7 @@ impl Resources {
         let grass_texture = load_texture("./assets/Grass.png").await?;
         let hills_texture = load_texture("./assets/Hills.png").await?;
         let water_texture = load_texture("./assets/Water.png").await?;
+        let wooden_house_wall_texture = load_texture("./assets/WoodenHouseWall.png").await?;
         // Load sounds
         // Load image
 
@@ -26,6 +28,7 @@ impl Resources {
             grass_texture,
             hills_texture,
             water_texture,
+            wooden_house_wall_texture,
             tiled_map_json,
         };
 
@@ -287,10 +290,15 @@ async fn main() -> Result<Resources, macroquad::Error> {
             ("Grass.png", resources.grass_texture),
             ("Water.png", resources.water_texture),
             ("Hills.png", resources.hills_texture),
+            ("WoodenHouseWall.png", resources.wooden_house_wall_texture),
         ],
         &[],
     )
     .unwrap();
+
+    for (x, y, tile) in tiled_map.tiles("Ocean", None) {
+        println!("{}, {}, {:#?}", x, y, tile);
+    }
 
     // set land area as boundary;
     let map_width = tiled_map.raw_tiled_map.width as f32 * tiled_map.raw_tiled_map.tilewidth as f32;
@@ -345,7 +353,7 @@ async fn main() -> Result<Resources, macroquad::Error> {
             screen_height() / 2.0 - camera.position.y * camera.zoom,
         );
 
-        // Draw map layers with camera offset and zoom
+        // Draw layers
         tiled_map.draw_tiles(
             "Ocean",
             Rect::new(
@@ -357,7 +365,27 @@ async fn main() -> Result<Resources, macroquad::Error> {
             None,
         );
         tiled_map.draw_tiles(
-            "land",
+            "Land",
+            Rect::new(
+                camera_offset.x,
+                camera_offset.y,
+                map_width * camera.zoom,
+                map_height * camera.zoom,
+            ),
+            None,
+        );
+        tiled_map.draw_tiles(
+            "Floor",
+            Rect::new(
+                camera_offset.x,
+                camera_offset.y,
+                map_width * camera.zoom,
+                map_height * camera.zoom,
+            ),
+            None,
+        );
+        tiled_map.draw_tiles(
+            "House",
             Rect::new(
                 camera_offset.x,
                 camera_offset.y,
