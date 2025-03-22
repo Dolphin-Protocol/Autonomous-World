@@ -1,6 +1,6 @@
 use macroquad::prelude::*;
 use macroquad_platformer::*;
-use macroquad_tiled as tiled;
+use macroquad_tiled::{self as tiled, Map};
 
 const SPRITE_SIZE: f32 = 48.0;
 const ANIMATION_SPEED: f32 = 0.1;
@@ -142,10 +142,23 @@ impl Player {
         );
     }
 
-    fn update(&mut self, dt: f32, world: &mut World) {
+    fn update(&mut self, dt: f32, world: &mut World, camera: &GameCamera) {
         let speed = 200.0;
         let mut movement = Vec2::ZERO;
         self.is_moving = false;
+
+        // Handle mouse click
+        if is_mouse_button_pressed(MouseButton::Left) {
+            let screen_position = Vec2::new(mouse_position().0, mouse_position().1);
+            let world_position = camera.screen_to_world(screen_position);
+
+            // Check if click is within map bounds
+            if self.map_bounds.contains(world_position) {
+                self.target_position = Some(world_position);
+                self.target_effect_timer = 0.0;
+                self.wave_active = true;
+            }
+        }
 
         // Handle keyboard input
         if is_key_down(KeyCode::Right) {
@@ -210,12 +223,14 @@ impl Player {
 
             // If no collision occurred, update player position
             let half_tile = 8.;
-            if !world.collide_check(self.collider, desired_position + vec2(-half_tile, -half_tile)) {
+            if !world.collide_check(
+                self.collider,
+                desired_position + vec2(-half_tile, -half_tile),
+            ) {
                 self.position = desired_position;
             } else {
                 // Reset collider position if collision occurred
                 world.set_actor_position(self.collider, self.position);
-
             }
         }
 
@@ -318,11 +333,6 @@ async fn main() -> Result<Resources, macroquad::Error> {
     )
     .unwrap();
 
-    // set land area as boundary;
-    let map_width = tiled_map.raw_tiled_map.width as f32 * tiled_map.raw_tiled_map.tilewidth as f32;
-    let map_height =
-        tiled_map.raw_tiled_map.height as f32 * tiled_map.raw_tiled_map.tileheight as f32;
-
     // Calculate the bounds for the land area (32x32 tiles in center)
     let tile_size = 16.0;
     let total_tiles = 60; // total map size in tiles
@@ -361,73 +371,14 @@ async fn main() -> Result<Resources, macroquad::Error> {
         clear_background(WHITE);
         camera.update_viewport_size();
 
-        // Handle mouse click
-        if is_mouse_button_pressed(MouseButton::Left) {
-            let screen_position = Vec2::new(mouse_position().0, mouse_position().1);
-            let world_position = camera.screen_to_world(screen_position);
-
-            // Check if click is within map bounds
-            if map_bounds.contains(world_position) {
-                player.target_position = Some(world_position);
-                player.target_effect_timer = 0.0;
-                player.wave_active = true;
-            }
-        }
-
         // Update player with collision world
-        player.update(get_frame_time(), &mut world);
+        player.update(get_frame_time(), &mut world, &camera);
 
         // Update camera to follow player
         camera.update(player.position);
 
-        // Calculate camera offset for drawing
-        // Calculate camera offset for drawing
-        let camera_offset = Vec2::new(
-            screen_width() / 2.0 - camera.position.x * camera.zoom,
-            screen_height() / 2.0 - camera.position.y * camera.zoom,
-        );
-
-        // Draw layers
-        tiled_map.draw_tiles(
-            "Ocean",
-            Rect::new(
-                camera_offset.x,
-                camera_offset.y,
-                map_width * camera.zoom,
-                map_height * camera.zoom,
-            ),
-            None,
-        );
-        tiled_map.draw_tiles(
-            "Land",
-            Rect::new(
-                camera_offset.x,
-                camera_offset.y,
-                map_width * camera.zoom,
-                map_height * camera.zoom,
-            ),
-            None,
-        );
-        tiled_map.draw_tiles(
-            "Floor",
-            Rect::new(
-                camera_offset.x,
-                camera_offset.y,
-                map_width * camera.zoom,
-                map_height * camera.zoom,
-            ),
-            None,
-        );
-        tiled_map.draw_tiles(
-            "House",
-            Rect::new(
-                camera_offset.x,
-                camera_offset.y,
-                map_width * camera.zoom,
-                map_height * camera.zoom,
-            ),
-            None,
-        );
+        // Draw layers in order
+        draw_tiled_layer(&tiled_map, &camera, vec!["Ocean", "Land", "Floor", "House"]);
 
         // Draw player at center of screen
         player.draw_player(&camera);
@@ -438,5 +389,28 @@ async fn main() -> Result<Resources, macroquad::Error> {
         draw_text(&format!("FPS: {}", get_fps()), 10.0, 20.0, 20.0, BLACK);
 
         next_frame().await;
+    }
+}
+
+fn draw_tiled_layer(tiled_map: &Map, camera: &GameCamera, layers: Vec<&str>) {
+    // Calculate camera offset for drawing
+    let camera_offset = Vec2::new(
+        screen_width() / 2.0 - camera.position.x * camera.zoom,
+        screen_height() / 2.0 - camera.position.y * camera.zoom,
+    );
+    let map_width = tiled_map.raw_tiled_map.width as f32 * tiled_map.raw_tiled_map.tilewidth as f32;
+    let map_height =
+        tiled_map.raw_tiled_map.height as f32 * tiled_map.raw_tiled_map.tileheight as f32;
+    for layer in layers {
+        tiled_map.draw_tiles(
+            layer,
+            Rect::new(
+                camera_offset.x,
+                camera_offset.y,
+                map_width * camera.zoom,
+                map_height * camera.zoom,
+            ),
+            None,
+        );
     }
 }
