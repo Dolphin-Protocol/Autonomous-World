@@ -1,9 +1,16 @@
 use macroquad::prelude::*;
+use macroquad::ui::Skin;
+use macroquad::ui::{hash, root_ui};
 use macroquad_platformer::*;
 use macroquad_tiled::{self as tiled, Map};
 
 const SPRITE_SIZE: f32 = 48.0;
 const ANIMATION_SPEED: f32 = 0.1;
+
+enum GameState {
+    MainMenu,
+    Playing,
+}
 
 struct Resources {
     grass_texture: Texture2D,
@@ -11,6 +18,11 @@ struct Resources {
     water_texture: Texture2D,
     wooden_house_wall_texture: Texture2D,
     tiled_map_json: String,
+    // ui
+    menu_texture: Image,
+    button_texture: Image,
+    clicked_button_texture: Image,
+    font: Vec<u8>,
 }
 
 impl Resources {
@@ -20,8 +32,13 @@ impl Resources {
         let hills_texture = load_texture("./assets/Hills.png").await?;
         let water_texture = load_texture("./assets/Water.png").await?;
         let wooden_house_wall_texture = load_texture("./assets/WoodenHouseWall.png").await?;
+        // font
+        let font = load_file("./assets/font.ttf").await.unwrap();
         // Load sounds
         // Load image
+        let menu_texture = load_image("./assets/ui/Menu.png").await?;
+        let button_texture = load_image("./assets/ui/Button.png").await?;
+        let clicked_button_texture = load_image("./assets/ui/ClickedButton.png").await?;
 
         // Create a simple Tiled map JSON
         let tiled_map_json = load_string("assets/map.json").await.unwrap();
@@ -31,6 +48,10 @@ impl Resources {
             water_texture,
             wooden_house_wall_texture,
             tiled_map_json,
+            menu_texture,
+            button_texture,
+            clicked_button_texture,
+            font,
         };
 
         Ok(resources)
@@ -147,7 +168,7 @@ impl Player {
         let mut movement = Vec2::ZERO;
         self.is_moving = false;
 
-        // Handle mouse click
+        // Handle mouse events
         if is_mouse_button_pressed(MouseButton::Left) {
             let screen_position = Vec2::new(mouse_position().0, mouse_position().1);
             let world_position = camera.screen_to_world(screen_position);
@@ -314,6 +335,8 @@ impl Player {
 async fn main() -> Result<Resources, macroquad::Error> {
     let resources = Resources::new().await?;
 
+    let mut game_state = GameState::MainMenu;
+
     // Initialize collision world
     let mut world = World::new();
 
@@ -367,26 +390,97 @@ async fn main() -> Result<Resources, macroquad::Error> {
     // Add the static colliders to the world
     world.add_static_tiled_layer(static_colliders, 16.0, 16.0, map_width_tiles, 1);
 
+    // UI
+    let window_style = root_ui()
+        .style_builder()
+        .background(resources.menu_texture)
+        .background_margin(RectOffset::new(32.0, 76.0, 44.0, 20.0))
+        .margin(RectOffset::new(0.0, -40.0, 0.0, 0.0))
+        .build();
+    let button_style = root_ui()
+        .style_builder()
+        .background_margin(RectOffset::new(16.0, 16.0, 16.0, 16.0))
+        .margin(RectOffset::new(16.0, 0.0, -8.0, -8.0))
+        .background(resources.button_texture)
+        .background_clicked(resources.clicked_button_texture)
+        .font(&resources.font)
+        .unwrap()
+        .text_color(WHITE)
+        .text_color_clicked(Color {
+            r: 175. / 256.,
+            g: 139. / 256.,
+            b: 104. / 256.,
+            a: 1.,
+        })
+        .text_color_hovered(Color {
+            r: 220. / 256.,
+            g: 185. / 256.,
+            b: 138. / 256.,
+            a: 1.,
+        })
+        .font_size(60)
+        .build();
+    let label_style = root_ui()
+        .style_builder()
+        .font(&resources.font)
+        .unwrap()
+        .text_color(WHITE)
+        .font_size(28)
+        .build();
+    let ui_skin = Skin {
+        window_style,
+        button_style,
+        label_style,
+        ..root_ui().default_skin()
+    };
+    root_ui().push_skin(&ui_skin);
+
+    let window_size = vec2(370.0, 320.0);
     loop {
         clear_background(WHITE);
-        camera.update_viewport_size();
 
-        // Update player with collision world
-        player.update(get_frame_time(), &mut world, &camera);
+        match game_state {
+            GameState::MainMenu => {
+                root_ui().window(
+                    hash!(),
+                    vec2(
+                        screen_width() / 2.0 - window_size.x / 2.0,
+                        screen_height() / 2.0 - window_size.y / 2.0,
+                    ),
+                    window_size,
+                    |ui| {
+                        ui.label(vec2(90., -10.), "Main Menu");
 
-        // Update camera to follow player
-        camera.update(player.position);
+                        if ui.button(vec2(65.0, 35.0), "Play") {
+                            game_state = GameState::Playing;
+                        }
+                        if ui.button(vec2(65.0, 135.0), "Quit") {
+                            std::process::exit(0);
+                        }
+                    },
+                );
+            }
+            GameState::Playing => {
+                camera.update_viewport_size();
 
-        // Draw layers in order
-        draw_tiled_layer(&tiled_map, &camera, vec!["Ocean", "Land", "Floor", "House"]);
+                // Update player with collision world
+                player.update(get_frame_time(), &mut world, &camera);
 
-        // Draw player at center of screen
-        player.draw_player(&camera);
+                // Update camera to follow player
+                camera.update(player.position);
 
-        // Draw target indicator if exists
-        player.draw_wave_effect(&camera);
+                // Draw layers in order
+                draw_tiled_layer(&tiled_map, &camera, vec!["Ocean", "Land", "Floor", "House"]);
 
-        draw_text(&format!("FPS: {}", get_fps()), 10.0, 20.0, 20.0, BLACK);
+                // Draw player at center of screen
+                player.draw_player(&camera);
+
+                // Draw target indicator if exists
+                player.draw_wave_effect(&camera);
+
+                draw_text(&format!("FPS: {}", get_fps()), 10.0, 20.0, 20.0, BLACK);
+            }
+        };
 
         next_frame().await;
     }
