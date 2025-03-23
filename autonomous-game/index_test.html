@@ -1,3 +1,67 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Game with Position Logging</title>
+    <style>
+      #player-speed {
+        top: 10px;
+        left: 10px;
+        background: rgba(255, 255, 255, 0.8);
+        padding: 10px;
+        font-family: monospace;
+      }
+
+      #set-player-speed {
+        left: 10px;
+      }
+
+      canvas {
+        top: 50px;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 80%;
+        overflow: hidden;
+        position: absolute;
+        background: black;
+        z-index: 0;
+        outline: none;
+      }
+
+      #player_speed {
+        top: 0px;
+      }
+    </style>
+  </head>
+  <body style="margin: 0; padding: 0; height: 100vh; width: 100vw">
+    <canvas id="glcanvas" tabindex="1" hidden></canvas>
+    <script src="https://not-fl3.github.io/miniquad-samples/mq_js_bundle.js"></script>
+    <script type="module" src="./wasm.js"></script>
+    <button id="player-speed" onclick="window.checkPlayerSpeed()">
+      check player speed
+    </button>
+    <button
+      id="set-player-speed"
+      onclick="window.setPlayerSpeed(Number(1000.0))"
+    >
+      set player speed
+    </button>
+    <div
+      id="run-container"
+      style="
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        flex-direction: column;
+      "
+    >
+      <button onclick="window.run()">Run Game</button>
+    </div>
+  </body>
+</html>
+
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -27,7 +91,6 @@
   </head>
   <body style="margin: 0; padding: 0; height: 100vh; width: 100vw">
     <canvas id="glcanvas" tabindex="1" hidden></canvas>
-    <script type="module" src="./wasm.js"></script>
     <script src="https://not-fl3.github.io/miniquad-samples/mq_js_bundle.js"></script>
     <script type="module">
       import init, {
@@ -65,12 +128,6 @@
       check player speed
     </button>
     <button id="update-sui-address" onclick='window.updateSuiAddress("0xabc")'>
-      set player speed
-    </button>
-    <button id="sui-address" onclick="window.checkPlayerSpeed()">
-      check player speed
-    </button>
-    <button id="update-sui-address" onclick="window.setPlayerSpeed(1000)">
       set player speed
     </button>
     <div

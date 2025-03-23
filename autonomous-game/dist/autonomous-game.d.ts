@@ -1,15 +1,13 @@
 /* tslint:disable */
 /* eslint-disable */
-export function set_player_speed(speed: number): void;
-export function get_player_speed(): number;
-export function greet(name: string): void;
+export function print(name: string): void;
+export function update_sui_address(sui_address: string): void;
+export function get_sui_address(): string;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
-  readonly set_player_speed: (a: number) => void;
-  readonly get_player_speed: () => number;
   readonly main: (a: number, b: number) => number;
   readonly file_loaded: (a: number) => void;
   readonly crate_version: () => number;
@@ -30,10 +28,13 @@ export interface InitOutput {
   readonly on_files_dropped_start: () => void;
   readonly on_files_dropped_finish: () => void;
   readonly on_file_dropped: (a: number, b: number, c: number, d: number) => void;
-  readonly greet: (a: number, b: number) => void;
+  readonly print: (a: number, b: number) => void;
+  readonly update_sui_address: (a: number, b: number) => void;
+  readonly get_sui_address: () => [number, number];
   readonly __wbindgen_export_0: WebAssembly.Table;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
+  readonly __wbindgen_free: (a: number, b: number, c: number) => void;
   readonly __wbindgen_start: () => void;
 }
 

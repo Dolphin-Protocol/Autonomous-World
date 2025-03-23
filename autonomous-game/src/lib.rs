@@ -1,5 +1,4 @@
-pub mod context;
-use context::get_context;
+use context::GAME_STATE;
 use wasm_bindgen::prelude::*;
 
 // utils
@@ -22,12 +21,23 @@ pub fn log_player_position(x: f32, y: f32) {
     log_position(x, y);
 }
 
-#[wasm_bindgen]
-pub fn update_sui_address(sui_address: String) {
-    get_context().sui_address = sui_address;
-}
-
-#[wasm_bindgen]
-pub fn get_sui_address() -> String {
-    get_context().sui_address.clone()
-}
+// #[wasm_bindgen]
+// pub fn update_sui_address(sui_address: String) {
+//     unsafe {
+//         if GAME_STATE.is_none() {
+//             context::new_context();
+//         }
+//         GAME_STATE.as_mut().unwrap().sui_address = sui_address;
+//     }
+// }
+//
+// #[wasm_bindgen]
+// pub fn get_sui_address() -> String {
+//     unsafe {
+//         if GAME_STATE.is_none() {
+//             context::new_context();
+//             return "".to_string();
+//         }
+//         GAME_STATE.as_mut().unwrap().sui_address.clone()
+//     }
+// }

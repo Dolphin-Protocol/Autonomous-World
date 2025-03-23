@@ -1,8 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
-export const set_player_speed: (a: number) => void;
-export const get_player_speed: () => number;
 export const main: (a: number, b: number) => number;
 export const file_loaded: (a: number) => void;
 export const crate_version: () => number;
@@ -23,8 +21,11 @@ export const focus: (a: number) => void;
 export const on_files_dropped_start: () => void;
 export const on_files_dropped_finish: () => void;
 export const on_file_dropped: (a: number, b: number, c: number, d: number) => void;
-export const greet: (a: number, b: number) => void;
+export const print: (a: number, b: number) => void;
+export const update_sui_address: (a: number, b: number) => void;
+export const get_sui_address: () => [number, number];
 export const __wbindgen_export_0: WebAssembly.Table;
 export const __wbindgen_malloc: (a: number, b: number) => number;
 export const __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
+export const __wbindgen_free: (a: number, b: number, c: number) => void;
 export const __wbindgen_start: () => void;

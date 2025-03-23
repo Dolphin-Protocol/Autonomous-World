@@ -1,15 +1,55 @@
-pub mod context;
+pub mod utils;
 
-use autonomous_game::update_sui_address;
+use std::sync::Mutex;
+
+use autonomous_game::log;
 use context::get_context;
+use lazy_static::lazy_static;
 use macroquad::prelude::*;
 use macroquad::ui::Skin;
 use macroquad::ui::{hash, root_ui};
 use macroquad_platformer::*;
 use macroquad_tiled::{self as tiled, Map};
+use wasm_bindgen::prelude::*;
 
 const SPRITE_SIZE: f32 = 48.0;
 const ANIMATION_SPEED: f32 = 0.1;
+
+lazy_static! {
+    static ref SHARED_STATE: Mutex<SharedState> = Mutex::new(SharedState {
+        speed: 0.0,
+        sui_address: "".to_string(),
+    });
+}
+
+pub struct SharedState {
+    pub speed: f32,
+    pub sui_address: String,
+}
+
+fn get_state() -> std::sync::MutexGuard<'static, SharedState> {
+    SHARED_STATE.lock().expect("fail to get state")
+}
+
+#[wasm_bindgen]
+pub fn set_player_speed(speed: f32) {
+    get_state().speed = speed;
+}
+
+#[wasm_bindgen]
+pub fn get_player_speed() -> f32 {
+    get_state().speed
+}
+
+#[wasm_bindgen]
+pub fn update_sui_address(sui_address: String) {
+    get_state().sui_address = sui_address;
+}
+
+#[wasm_bindgen]
+pub fn get_sui_address() -> String {
+    get_state().sui_address.clone()
+}
 
 enum GameState {
     MainMenu,
@@ -168,7 +208,10 @@ impl Player {
     }
 
     fn update(&mut self, dt: f32, world: &mut World, camera: &GameCamera) {
-        let speed = 200.0;
+        let mut speed = 200.0;
+        if get_state().speed != 0.0 {
+            speed = get_state().speed;
+        };
         let mut movement = Vec2::ZERO;
         self.is_moving = false;
 
@@ -442,6 +485,8 @@ async fn main() -> Result<Resources, macroquad::Error> {
     root_ui().push_skin(&ui_skin);
 
     let window_size = vec2(370.0, 320.0);
+
+    log("game start");
     loop {
         clear_background(WHITE);
 
@@ -457,12 +502,10 @@ async fn main() -> Result<Resources, macroquad::Error> {
                     |ui| {
                         ui.label(vec2(90., -10.), "Main Menu");
 
-                        let sui_address = get_context().sui_address.clone();
-
                         if ui.button(vec2(65.0, 35.0), "Play") {
                             game_state = GameState::Playing;
                         }
-                        if sui_address.is_empty() {
+                        if get_state().sui_address.is_empty() {
                             // disconnected
                             if ui.button(vec2(14.0, 135.0), "Connect") {}
                         } else {
