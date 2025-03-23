@@ -1,7 +1,8 @@
-use autonomous_game::{greet, log, log_player_position};
+pub mod context;
+
+use autonomous_game::update_sui_address;
+use context::get_context;
 use macroquad::prelude::*;
-use macroquad_tiled as tiled;
-use wasm_bindgen::prelude::*;
 use macroquad::ui::Skin;
 use macroquad::ui::{hash, root_ui};
 use macroquad_platformer::*;
@@ -10,22 +11,6 @@ use macroquad_tiled::{self as tiled, Map};
 const SPRITE_SIZE: f32 = 48.0;
 const ANIMATION_SPEED: f32 = 0.1;
 
-static mut SHARED_STATE: GameState = GameState { speed: 0.0 };
-
-pub struct GameState {
-    pub speed: f32,
-}
-
-#[wasm_bindgen]
-pub fn set_player_speed(speed: f32) {
-    unsafe {
-        SHARED_STATE.speed = speed;
-    }
-}
-
-#[wasm_bindgen]
-pub fn get_player_speed() -> f32 {
-    unsafe { SHARED_STATE.speed }
 enum GameState {
     MainMenu,
     Playing,
@@ -180,26 +165,10 @@ impl Player {
             self.map_bounds.y + half_sprite,
             self.map_bounds.y + self.map_bounds.h - half_sprite,
         );
-
-        // testing
-        if self.position.x == self.map_bounds.x + half_sprite {
-            log("to the left end");
-            log_player_position(self.position.x, self.position.y);
-        };
-
-        if self.position.x == self.map_bounds.x + self.map_bounds.w - half_sprite {
-            log("to the right end");
-            log_player_position(self.position.x, self.position.y);
-        };
     }
 
-    fn update(&mut self, dt: f32) {
-        let mut speed = 200.0;
-        unsafe {
-            if SHARED_STATE.speed != 0.0 {
-                speed = SHARED_STATE.speed;
-            };
-        };
+    fn update(&mut self, dt: f32, world: &mut World, camera: &GameCamera) {
+        let speed = 200.0;
         let mut movement = Vec2::ZERO;
         self.is_moving = false;
 
@@ -368,6 +337,8 @@ impl Player {
 
 #[macroquad::main("Grass Tile Map")]
 async fn main() -> Result<Resources, macroquad::Error> {
+    // Initialize Context
+    context::new_context();
     let resources = Resources::new().await?;
 
     let mut game_state = GameState::MainMenu;
@@ -486,12 +457,18 @@ async fn main() -> Result<Resources, macroquad::Error> {
                     |ui| {
                         ui.label(vec2(90., -10.), "Main Menu");
 
+                        let sui_address = get_context().sui_address.clone();
+
                         if ui.button(vec2(65.0, 35.0), "Play") {
                             game_state = GameState::Playing;
                         }
-                        if ui.button(vec2(65.0, 135.0), "Quit") {
-                            std::process::exit(0);
-                        }
+                        if sui_address.is_empty() {
+                            // disconnected
+                            if ui.button(vec2(14.0, 135.0), "Connect") {}
+                        } else {
+                            // connected
+                            if ui.button(vec2(14.0, 135.0), "Connected") {}
+                        };
                     },
                 );
             }
