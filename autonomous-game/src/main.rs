@@ -1,55 +1,14 @@
-pub mod utils;
 
-use std::sync::Mutex;
-
-use autonomous_game::log;
-use context::get_context;
-use lazy_static::lazy_static;
+use autonomous_game::{console_log, get_state};
 use macroquad::prelude::*;
 use macroquad::ui::Skin;
 use macroquad::ui::{hash, root_ui};
 use macroquad_platformer::*;
 use macroquad_tiled::{self as tiled, Map};
-use wasm_bindgen::prelude::*;
 
 const SPRITE_SIZE: f32 = 48.0;
 const ANIMATION_SPEED: f32 = 0.1;
 
-lazy_static! {
-    static ref SHARED_STATE: Mutex<SharedState> = Mutex::new(SharedState {
-        speed: 0.0,
-        sui_address: "".to_string(),
-    });
-}
-
-pub struct SharedState {
-    pub speed: f32,
-    pub sui_address: String,
-}
-
-fn get_state() -> std::sync::MutexGuard<'static, SharedState> {
-    SHARED_STATE.lock().expect("fail to get state")
-}
-
-#[wasm_bindgen]
-pub fn set_player_speed(speed: f32) {
-    get_state().speed = speed;
-}
-
-#[wasm_bindgen]
-pub fn get_player_speed() -> f32 {
-    get_state().speed
-}
-
-#[wasm_bindgen]
-pub fn update_sui_address(sui_address: String) {
-    get_state().sui_address = sui_address;
-}
-
-#[wasm_bindgen]
-pub fn get_sui_address() -> String {
-    get_state().sui_address.clone()
-}
 
 enum GameState {
     MainMenu,
@@ -381,7 +340,6 @@ impl Player {
 #[macroquad::main("Grass Tile Map")]
 async fn main() -> Result<Resources, macroquad::Error> {
     // Initialize Context
-    context::new_context();
     let resources = Resources::new().await?;
 
     let mut game_state = GameState::MainMenu;
@@ -486,7 +444,7 @@ async fn main() -> Result<Resources, macroquad::Error> {
 
     let window_size = vec2(370.0, 320.0);
 
-    log("game start");
+    console_log("game start");
     loop {
         clear_background(WHITE);
 

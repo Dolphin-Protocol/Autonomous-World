@@ -2,22 +2,9 @@
 
 let wasm; export const set_wasm = (w) => wasm = w;
 
-/**
- * @param {number} speed
- */
-export function set_player_speed(speed) {
-    wasm.set_player_speed(speed);
-}
+const cachedTextDecoder = (typeof TextDecoder !== 'undefined' ? new TextDecoder('utf-8', { ignoreBOM: true, fatal: true }) : { decode: () => { throw Error('TextDecoder not available') } } );
 
-/**
- * @returns {number}
- */
-export function get_player_speed() {
-    const ret = wasm.get_player_speed();
-    return ret;
-}
-
-let WASM_VECTOR_LEN = 0;
+if (typeof TextDecoder !== 'undefined') { cachedTextDecoder.decode(); };
 
 let cachedUint8ArrayMemory0 = null;
 
@@ -27,6 +14,13 @@ function getUint8ArrayMemory0() {
     }
     return cachedUint8ArrayMemory0;
 }
+
+function getStringFromWasm0(ptr, len) {
+    ptr = ptr >>> 0;
+    return cachedTextDecoder.decode(getUint8ArrayMemory0().subarray(ptr, ptr + len));
+}
+
+let WASM_VECTOR_LEN = 0;
 
 const cachedTextEncoder = (typeof TextEncoder !== 'undefined' ? new TextEncoder('utf-8') : { encode: () => { throw Error('TextEncoder not available') } } );
 
@@ -82,6 +76,30 @@ function passStringToWasm0(arg, malloc, realloc) {
     return ptr;
 }
 /**
+ * @param {string} name
+ */
+export function print(name) {
+    const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    wasm.print(ptr0, len0);
+}
+
+/**
+ * @param {number} speed
+ */
+export function set_player_speed(speed) {
+    wasm.set_player_speed(speed);
+}
+
+/**
+ * @returns {number}
+ */
+export function get_player_speed() {
+    const ret = wasm.get_player_speed();
+    return ret;
+}
+
+/**
  * @param {string} sui_address
  */
 export function update_sui_address(sui_address) {
@@ -90,14 +108,6 @@ export function update_sui_address(sui_address) {
     wasm.update_sui_address(ptr0, len0);
 }
 
-const cachedTextDecoder = (typeof TextDecoder !== 'undefined' ? new TextDecoder('utf-8', { ignoreBOM: true, fatal: true }) : { decode: () => { throw Error('TextDecoder not available') } } );
-
-if (typeof TextDecoder !== 'undefined') { cachedTextDecoder.decode(); };
-
-function getStringFromWasm0(ptr, len) {
-    ptr = ptr >>> 0;
-    return cachedTextDecoder.decode(getUint8ArrayMemory0().subarray(ptr, ptr + len));
-}
 /**
  * @returns {string}
  */
@@ -148,6 +158,9 @@ async function __wbg_load(module, imports) {
 function __wbg_get_imports() {
     const imports = {};
     imports.wbg = {};
+    imports.wbg.__wbg_log_242335a0403ba73a = function(arg0, arg1) {
+        console.log(getStringFromWasm0(arg0, arg1));
+    };
     imports.wbg.__wbindgen_init_externref_table = function() {
         const table = wasm.__wbindgen_export_0;
         const offset = table.grow(4);
