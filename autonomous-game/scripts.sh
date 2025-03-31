@@ -129,7 +129,7 @@ fi
 
 # Generate bindgen outputs
 mkdir -p dist
-wasm-bindgen $TARGET_DIR/"$PROJECT_NAME".wasm --out-dir dist --target web --no-typescript
+wasm-bindgen $TARGET_DIR/"$PROJECT_NAME".wasm --out-dir dist --target web
 
 # Shim to tie the thing together
 sed -i '' "s/import \* as __wbg_star0 from 'env';//" dist/"$PROJECT_NAME".js
