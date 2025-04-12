@@ -13,6 +13,7 @@
     "vite": "^6.2.0"
   },
   "dependencies": {
+    "@mysten/enoki": "^0.6.3",
     "@mysten/sui": "^1.25.0",
     "@mysten/wallet-standard": "^0.14.0"
   }

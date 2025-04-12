@@ -106,3 +106,23 @@ canvas {
   z-index: 0;
   outline: none;
 }
+
+/* custom */
+.login-button {
+  padding: 12px 24px;
+  font-size: 16px;
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.login-button:hover {
+  background-color: #357abd;
+}
+
+.login-button:active {
+  background-color: #2d6aa3;
+}

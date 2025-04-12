@@ -3,3 +3,4 @@ target
 js
 .DS_Store
 dist
+node_modules
