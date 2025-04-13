@@ -1,66 +1,46 @@
-import { EnokiClient, EnokiFlow } from "@mysten/enoki";
 import "./style.css";
-import { getWallets, Wallet, signTransaction } from "@mysten/wallet-standard";
 import { getFullnodeUrl, SuiClient } from "@mysten/sui/client";
-import { Transaction } from "@mysten/sui/transactions";
+import { walletStore, connectWallet, disConnectWallet } from "./wallet";
 
-// Create and append login button to the DOM
-const loginButton = document.createElement("button");
-loginButton.innerHTML = "Login with Google";
-loginButton.className = "login-button";
-document.body.appendChild(loginButton);
+// Create and append connect button to the DOM
+const connectButton = document.createElement("button");
+connectButton.innerHTML = "Connect Wallet";
+connectButton.className = "login-button";
+document.body.appendChild(connectButton);
 
-// Create and append login button to the DOM
+// Create and append sign button to the DOM
 const signButton = document.createElement("button");
 signButton.innerHTML = "Sign the Tx";
 signButton.className = "login-button";
+signButton.style.display = "none"; // Hide initially
 document.body.appendChild(signButton);
 
-const apiKey = import.meta.env.VITE_ENOKI_PRIVATE_KEY;
-const client = new SuiClient({ url: getFullnodeUrl("testnet") });
+// Update UI based on initial wallet state
+const updateButtonsState = (isConnected: boolean, accounts: any[] | null) => {
+  if (isConnected && accounts?.length) {
+    connectButton.innerHTML = `Connected: ${accounts[0].address.slice(0, 6)}...${accounts[0].address.slice(-4)}`;
+    connectButton.classList.add("connected");
+    signButton.style.display = "block";
+  } else {
+    connectButton.innerHTML = "Connect Wallet";
+    connectButton.classList.remove("connected");
+    signButton.style.display = "none";
+  }
+};
 
-const availableWallets = getWallets().get();
-const suiWallet = availableWallets.find(
-  (wallet) => wallet.name == "Sui Wallet",
+// Initialize buttons state
+updateButtonsState(
+  walletStore.getState().isConnected,
+  walletStore.getState().accounts,
 );
 
-// state
-let accounts = null;
-if (suiWallet) {
-  console.log(suiWallet.accounts);
-  loginButton.addEventListener("click", () => connectWallet(suiWallet));
-  signButton.addEventListener("click", () => signSuiTransaction(suiWallet));
-}
+const client = new SuiClient({ url: getFullnodeUrl("testnet") });
 
-async function connectWallet(wallet: Wallet) {
-  const connectResult = await wallet.features["standard:connect"].connect();
+// Subscribe to wallet state changes
+walletStore.subscribe((state) => {
+  updateButtonsState(state.isConnected, state.accounts);
+});
 
-  if (!!connectResult.accounts.length) accounts = connectResult.accounts;
-}
-
-async function signAndExecuteTransaction(wallet: Wallet) {
-  const tx = new Transaction();
-
-  tx.setSender(accounts[0].address);
-  // tx.setGasBudget(50000);
-
-  // const txJson = await tx.toJSON({ supportedIntents: [], client });
-  const { bytes, signature } = await signTransaction(wallet, {
-    transaction: {
-      async toJSON() {
-        return await tx.toJSON({
-          supportedIntents: [],
-          client,
-        });
-      },
-    },
-    account: accounts[0] as any,
-    chain: "sui:testnet",
-  });
-  const result = await client.executeTransactionBlock({
-    transactionBlock: bytes,
-    signature,
-  });
-
-  console.log({ result });
-}
+connectButton.addEventListener("click", () =>
+  walletStore.getState().isConnected ? disConnectWallet() : connectWallet(),
+);
