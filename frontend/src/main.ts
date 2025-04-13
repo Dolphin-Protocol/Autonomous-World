@@ -1,6 +1,26 @@
 import "./style.css";
 import { getFullnodeUrl, SuiClient } from "@mysten/sui/client";
 import { walletStore, connectWallet, disConnectWallet } from "./wallet";
+import {
+  get_sui_address,
+  update_sui_address,
+} from "../wasm/autonomous-game.js";
+
+declare global {
+  interface Window {
+    wasmInitialized: Promise<void>;
+  }
+}
+
+// Wait for WASM initialization before running main code
+async function init() {
+  await window.wasmInitialized;
+
+  // Your main.ts initialization code goes here
+  console.log({ foo: get_sui_address() });
+}
+
+init().catch(console.error);
 
 // Create and append connect button to the DOM
 const connectButton = document.createElement("button");
@@ -33,6 +53,8 @@ updateButtonsState(
   walletStore.getState().isConnected,
   walletStore.getState().accounts,
 );
+
+// console.log({ foo: get_sui_address() });
 
 const client = new SuiClient({ url: getFullnodeUrl("testnet") });
 
