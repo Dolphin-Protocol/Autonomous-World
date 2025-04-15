@@ -79,7 +79,7 @@ impl GameCamera {
         Self {
             position: Vec2::new(0.0, 0.0),
             viewport_size: Vec2::new(screen_width(), screen_height()),
-            zoom: 2.0,
+            zoom: 3.0,
         }
     }
 
@@ -340,7 +340,17 @@ impl Player {
     }
 }
 
-#[macroquad::main("Autonomous World")]
+fn window_conf() -> Conf {
+    Conf {
+        window_title: "Autonomous World".to_owned(),
+        fullscreen: true,
+        //window_height: 500,
+        //window_width: 500,
+        ..Default::default()
+    }
+}
+
+#[macroquad::main(window_conf)]
 async fn main() -> Result<Resources, macroquad::Error> {
     let resources = Resources::new().await?;
 
@@ -367,7 +377,7 @@ async fn main() -> Result<Resources, macroquad::Error> {
 
     // Calculate the bounds for the land area (32x32 tiles in center)
     let tile_size = 16.0;
-    let total_tiles = 60; // total map size in tiles
+    let total_tiles = 90; // total map size in tiles
     let land_tiles = 32; // land area size in tiles
 
     // Calculate the offset to center the land area
