@@ -16,10 +16,17 @@ enum GameState {
 }
 
 struct Resources {
+    // texture
     grass_texture: Texture2D,
-    hills_texture: Texture2D,
     water_texture: Texture2D,
+    hills_texture: Texture2D,
     wooden_house_wall_texture: Texture2D,
+    door_animation_texture: Texture2D,
+    basic_furniture_texture: Texture2D,
+    plants_texture: Texture2D,
+    tilled_dirt_texture: Texture2D,
+    farming_plants_texture: Texture2D,
+    // map json
     tiled_map_json: String,
     bg_animation: AnimatedBackground,
     // ui
@@ -36,6 +43,11 @@ impl Resources {
         let hills_texture = load_texture("./assets/Hills.png").await?;
         let water_texture = load_texture("./assets/Water.png").await?;
         let wooden_house_wall_texture = load_texture("./assets/WoodenHouseWall.png").await?;
+        let door_animation_texture = load_texture("./assets/DoorAnimation.png").await?;
+        let basic_furniture_texture = load_texture("./assets/BasicFurniture.png").await?;
+        let plants_texture = load_texture("./assets/Plants.png").await?;
+        let tilled_dirt_texture = load_texture("./assets/TilledDirt.png").await?;
+        let farming_plants_texture = load_texture("./assets/FarmingPlants.png").await?;
         // font
         let font = load_file("./assets/font.ttf").await.unwrap();
         // Load sounds
@@ -55,6 +67,11 @@ impl Resources {
             hills_texture,
             water_texture,
             wooden_house_wall_texture,
+            door_animation_texture,
+            basic_furniture_texture,
+            plants_texture,
+            tilled_dirt_texture,
+            farming_plants_texture,
             tiled_map_json,
             bg_animation,
             menu_texture,
@@ -136,7 +153,7 @@ impl Player {
         texture.set_filter(FilterMode::Nearest);
 
         // Create player collider: collision check minimize at 16px
-        let position = Vec2::new(screen_width() / 2.0, screen_height() / 2.0);
+        let position = Vec2::new(screen_width() / 2.0, screen_height() / 2.0 + 120.0);
         let collider = world.add_actor(position, 16, 16);
         Self {
             position,
@@ -367,9 +384,14 @@ async fn main() -> Result<Resources, macroquad::Error> {
         &resources.tiled_map_json,
         &[
             ("Grass.png", resources.grass_texture),
-            ("Water.png", resources.water_texture),
             ("Hills.png", resources.hills_texture),
+            ("Water.png", resources.water_texture),
             ("WoodenHouseWall.png", resources.wooden_house_wall_texture),
+            ("DoorAnimation.png", resources.door_animation_texture),
+            ("BasicFurniture.png", resources.basic_furniture_texture),
+            ("Plants.png", resources.plants_texture),
+            ("TilledDirt.png", resources.tilled_dirt_texture),
+            ("FarmingPlants.png", resources.farming_plants_texture),
         ],
         &[],
     )
@@ -509,7 +531,7 @@ async fn main() -> Result<Resources, macroquad::Error> {
                 camera.update(player.position);
 
                 // Draw layers in order
-                draw_tiled_layer(&tiled_map, &camera, vec!["Ocean", "Land", "Floor", "House"]);
+                draw_tiled_layer(&tiled_map, &camera, vec!["Ocean", "Land", "Floor", "House", "Furniture"]);
 
                 // Draw player at center of screen
                 player.draw_player(&camera);
