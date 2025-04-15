@@ -96,7 +96,7 @@ impl GameCamera {
         Self {
             position: Vec2::new(0.0, 0.0),
             viewport_size: Vec2::new(screen_width(), screen_height()),
-            zoom: 3.0,
+            zoom: 2.5,
         }
     }
 
@@ -153,7 +153,8 @@ impl Player {
         texture.set_filter(FilterMode::Nearest);
 
         // Create player collider: collision check minimize at 16px
-        let position = Vec2::new(screen_width() / 2.0, screen_height() / 2.0 + 120.0);
+        println!("{}, {}", screen_width(), screen_height());
+        let position = Vec2::new(720.0, 720.0);
         let collider = world.add_actor(position, 16, 16);
         Self {
             position,
@@ -531,7 +532,11 @@ async fn main() -> Result<Resources, macroquad::Error> {
                 camera.update(player.position);
 
                 // Draw layers in order
-                draw_tiled_layer(&tiled_map, &camera, vec!["Ocean", "Land", "Floor", "House", "Furniture"]);
+                draw_tiled_layer(
+                    &tiled_map,
+                    &camera,
+                    vec!["Ocean", "Land", "Floor", "House", "Furniture"],
+                );
 
                 // Draw player at center of screen
                 player.draw_player(&camera);
