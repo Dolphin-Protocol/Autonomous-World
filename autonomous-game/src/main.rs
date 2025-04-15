@@ -1,3 +1,6 @@
+mod animated_gif;
+
+use animated_gif::AnimatedBackground;
 use macroquad::prelude::*;
 use macroquad::ui::Skin;
 use macroquad::ui::{hash, root_ui};
@@ -18,6 +21,7 @@ struct Resources {
     water_texture: Texture2D,
     wooden_house_wall_texture: Texture2D,
     tiled_map_json: String,
+    bg_animation: AnimatedBackground,
     // ui
     menu_texture: Image,
     button_texture: Image,
@@ -42,12 +46,17 @@ impl Resources {
 
         // Create a simple Tiled map JSON
         let tiled_map_json = load_string("assets/map.json").await.unwrap();
+
+        // animated background gif
+        let bg_animation = AnimatedBackground::load("./assets/animated-gif/", 64).await;
+
         let resources = Resources {
             grass_texture,
             hills_texture,
             water_texture,
             wooden_house_wall_texture,
             tiled_map_json,
+            bg_animation,
             menu_texture,
             button_texture,
             clicked_button_texture,
@@ -331,7 +340,7 @@ impl Player {
     }
 }
 
-#[macroquad::main("Grass Tile Map")]
+#[macroquad::main("Autonomous World")]
 async fn main() -> Result<Resources, macroquad::Error> {
     let resources = Resources::new().await?;
 
@@ -436,11 +445,31 @@ async fn main() -> Result<Resources, macroquad::Error> {
     root_ui().push_skin(&ui_skin);
 
     let window_size = vec2(370.0, 320.0);
+
+    let mut bg_animation = resources.bg_animation;
     loop {
         clear_background(WHITE);
 
+        let dt = get_frame_time();
+
+        // draw the background image
+
         match game_state {
             GameState::MainMenu => {
+                // Update animation
+                bg_animation.update(dt);
+                draw_texture_ex(
+                    bg_animation.current_texture(),
+                    0.0,
+                    0.0,
+                    WHITE,
+                    DrawTextureParams {
+                        dest_size: Some(vec2(screen_width(), screen_height())),
+                        ..Default::default()
+                    },
+                );
+
+                // UI modal
                 root_ui().window(
                     hash!(),
                     vec2(
@@ -464,7 +493,7 @@ async fn main() -> Result<Resources, macroquad::Error> {
                 camera.update_viewport_size();
 
                 // Update player with collision world
-                player.update(get_frame_time(), &mut world, &camera);
+                player.update(dt, &mut world, &camera);
 
                 // Update camera to follow player
                 camera.update(player.position);
