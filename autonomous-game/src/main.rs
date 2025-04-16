@@ -1,6 +1,8 @@
 mod animated_gif;
+mod door;
 
 use animated_gif::AnimatedBackground;
+use door::Door;
 use macroquad::prelude::*;
 use macroquad::ui::Skin;
 use macroquad::ui::{hash, root_ui};
@@ -378,6 +380,8 @@ async fn main() -> Result<Resources, macroquad::Error> {
     let mut world = World::new();
 
     let mut player = Player::new(&mut world).await;
+    let mut door = Door::new(Vec2::new(784.0, 560.0), 6).await;
+
     let mut camera = GameCamera::new();
 
     // Load the map
@@ -480,12 +484,11 @@ async fn main() -> Result<Resources, macroquad::Error> {
     let window_size = vec2(370.0, 320.0);
 
     let mut bg_animation = resources.bg_animation;
+
     loop {
         clear_background(WHITE);
 
         let dt = get_frame_time();
-
-        // draw the background image
 
         match game_state {
             GameState::MainMenu => {
@@ -528,6 +531,13 @@ async fn main() -> Result<Resources, macroquad::Error> {
                 // Update player with collision world
                 player.update(dt, &mut world, &camera);
 
+                // Update door animation
+                // Toggle door when space is pressed
+                if is_key_pressed(KeyCode::Space) && !door.is_animating() {
+                    door.toggle();
+                }
+                door.update(dt);
+
                 // Update camera to follow player
                 camera.update(player.position);
 
@@ -540,6 +550,8 @@ async fn main() -> Result<Resources, macroquad::Error> {
 
                 // Draw player at center of screen
                 player.draw_player(&camera);
+
+                door.draw_door(&camera);
 
                 // Draw target indicator if exists
                 player.draw_wave_effect(&camera);
