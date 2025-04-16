@@ -1,5 +1,10 @@
 
 use autonomous_game::{console_log, get_state};
+mod animated_gif;
+mod door;
+
+use animated_gif::AnimatedBackground;
+use door::Door;
 use macroquad::prelude::*;
 use macroquad::ui::Skin;
 use macroquad::ui::{hash, root_ui};
@@ -16,11 +21,19 @@ enum GameState {
 }
 
 struct Resources {
+    // texture
     grass_texture: Texture2D,
-    hills_texture: Texture2D,
     water_texture: Texture2D,
+    hills_texture: Texture2D,
     wooden_house_wall_texture: Texture2D,
+    door_animation_texture: Texture2D,
+    basic_furniture_texture: Texture2D,
+    plants_texture: Texture2D,
+    tilled_dirt_texture: Texture2D,
+    farming_plants_texture: Texture2D,
+    // map json
     tiled_map_json: String,
+    bg_animation: AnimatedBackground,
     // ui
     menu_texture: Image,
     button_texture: Image,
@@ -35,6 +48,11 @@ impl Resources {
         let hills_texture = load_texture("./assets/Hills.png").await?;
         let water_texture = load_texture("./assets/Water.png").await?;
         let wooden_house_wall_texture = load_texture("./assets/WoodenHouseWall.png").await?;
+        let door_animation_texture = load_texture("./assets/DoorAnimation.png").await?;
+        let basic_furniture_texture = load_texture("./assets/BasicFurniture.png").await?;
+        let plants_texture = load_texture("./assets/Plants.png").await?;
+        let tilled_dirt_texture = load_texture("./assets/TilledDirt.png").await?;
+        let farming_plants_texture = load_texture("./assets/FarmingPlants.png").await?;
         // font
         let font = load_file("./assets/font.ttf").await.unwrap();
         // Load sounds
@@ -45,12 +63,22 @@ impl Resources {
 
         // Create a simple Tiled map JSON
         let tiled_map_json = load_string("assets/map.json").await.unwrap();
+
+        // animated background gif
+        let bg_animation = AnimatedBackground::load("./assets/animated-gif/", 64).await;
+
         let resources = Resources {
             grass_texture,
             hills_texture,
             water_texture,
             wooden_house_wall_texture,
+            door_animation_texture,
+            basic_furniture_texture,
+            plants_texture,
+            tilled_dirt_texture,
+            farming_plants_texture,
             tiled_map_json,
+            bg_animation,
             menu_texture,
             button_texture,
             clicked_button_texture,
@@ -73,7 +101,7 @@ impl GameCamera {
         Self {
             position: Vec2::new(0.0, 0.0),
             viewport_size: Vec2::new(screen_width(), screen_height()),
-            zoom: 2.0,
+            zoom: 2.5,
         }
     }
 
@@ -130,7 +158,8 @@ impl Player {
         texture.set_filter(FilterMode::Nearest);
 
         // Create player collider: collision check minimize at 16px
-        let position = Vec2::new(screen_width() / 2.0, screen_height() / 2.0);
+        println!("{}, {}", screen_width(), screen_height());
+        let position = Vec2::new(720.0, 720.0);
         let collider = world.add_actor(position, 16, 16);
         Self {
             position,
@@ -337,7 +366,17 @@ impl Player {
     }
 }
 
-#[macroquad::main("Grass Tile Map")]
+fn window_conf() -> Conf {
+    Conf {
+        window_title: "Autonomous World".to_owned(),
+        fullscreen: true,
+        //window_height: 500,
+        //window_width: 500,
+        ..Default::default()
+    }
+}
+
+#[macroquad::main(window_conf)]
 async fn main() -> Result<Resources, macroquad::Error> {
     // Initialize Context
     let resources = Resources::new().await?;
@@ -348,6 +387,8 @@ async fn main() -> Result<Resources, macroquad::Error> {
     let mut world = World::new();
 
     let mut player = Player::new(&mut world).await;
+    let mut door = Door::new(Vec2::new(784.0, 560.0), 6).await;
+
     let mut camera = GameCamera::new();
 
     // Load the map
@@ -355,9 +396,14 @@ async fn main() -> Result<Resources, macroquad::Error> {
         &resources.tiled_map_json,
         &[
             ("Grass.png", resources.grass_texture),
-            ("Water.png", resources.water_texture),
             ("Hills.png", resources.hills_texture),
+            ("Water.png", resources.water_texture),
             ("WoodenHouseWall.png", resources.wooden_house_wall_texture),
+            ("DoorAnimation.png", resources.door_animation_texture),
+            ("BasicFurniture.png", resources.basic_furniture_texture),
+            ("Plants.png", resources.plants_texture),
+            ("TilledDirt.png", resources.tilled_dirt_texture),
+            ("FarmingPlants.png", resources.farming_plants_texture),
         ],
         &[],
     )
@@ -365,7 +411,7 @@ async fn main() -> Result<Resources, macroquad::Error> {
 
     // Calculate the bounds for the land area (32x32 tiles in center)
     let tile_size = 16.0;
-    let total_tiles = 60; // total map size in tiles
+    let total_tiles = 90; // total map size in tiles
     let land_tiles = 32; // land area size in tiles
 
     // Calculate the offset to center the land area
@@ -445,11 +491,29 @@ async fn main() -> Result<Resources, macroquad::Error> {
     let window_size = vec2(370.0, 320.0);
 
     console_log("game start");
+    let mut bg_animation = resources.bg_animation;
+
     loop {
         clear_background(WHITE);
 
+        let dt = get_frame_time();
+
         match game_state {
             GameState::MainMenu => {
+                // Update animation
+                bg_animation.update(dt);
+                draw_texture_ex(
+                    bg_animation.current_texture(),
+                    0.0,
+                    0.0,
+                    WHITE,
+                    DrawTextureParams {
+                        dest_size: Some(vec2(screen_width(), screen_height())),
+                        ..Default::default()
+                    },
+                );
+
+                // UI modal
                 root_ui().window(
                     hash!(),
                     vec2(
@@ -477,16 +541,29 @@ async fn main() -> Result<Resources, macroquad::Error> {
                 camera.update_viewport_size();
 
                 // Update player with collision world
-                player.update(get_frame_time(), &mut world, &camera);
+                player.update(dt, &mut world, &camera);
+
+                // Update door animation
+                // Toggle door when space is pressed
+                if is_key_pressed(KeyCode::Space) && !door.is_animating() {
+                    door.toggle();
+                }
+                door.update(dt);
 
                 // Update camera to follow player
                 camera.update(player.position);
 
                 // Draw layers in order
-                draw_tiled_layer(&tiled_map, &camera, vec!["Ocean", "Land", "Floor", "House"]);
+                draw_tiled_layer(
+                    &tiled_map,
+                    &camera,
+                    vec!["Ocean", "Land", "Floor", "House", "Furniture"],
+                );
 
                 // Draw player at center of screen
                 player.draw_player(&camera);
+
+                door.draw_door(&camera);
 
                 // Draw target indicator if exists
                 player.draw_wave_effect(&camera);
