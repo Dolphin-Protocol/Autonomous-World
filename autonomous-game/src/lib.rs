@@ -8,7 +8,7 @@ pub fn print(name: &str) {
     log(&format!("Hello, {}!", name));
 }
 
-// calling the functino in JS
+// calling the function in JS
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_namespace = console)]
@@ -18,6 +18,7 @@ extern "C" {
     fn log_position(x: f32, y: f32);
 }
 
+// have to wrap the extern function
 pub fn console_log(s: &str) {
     log(s);
 }

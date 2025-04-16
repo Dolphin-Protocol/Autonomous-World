@@ -490,7 +490,7 @@ async fn main() -> Result<Resources, macroquad::Error> {
 
     let window_size = vec2(370.0, 320.0);
 
-    console_log("game start");
+    console_log("game start; called from rust");
     let mut bg_animation = resources.bg_animation;
 
     loop {
