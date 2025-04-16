@@ -1,6 +1,8 @@
 mod animated_gif;
 mod door;
 
+use std::fmt::format;
+
 use animated_gif::AnimatedBackground;
 use door::Door;
 use macroquad::prelude::*;
@@ -28,6 +30,7 @@ struct Resources {
     plants_texture: Texture2D,
     tilled_dirt_texture: Texture2D,
     farming_plants_texture: Texture2D,
+    dialog_box_texture: Texture2D,
     // map json
     tiled_map_json: String,
     bg_animation: AnimatedBackground,
@@ -50,6 +53,7 @@ impl Resources {
         let plants_texture = load_texture("./assets/Plants.png").await?;
         let tilled_dirt_texture = load_texture("./assets/TilledDirt.png").await?;
         let farming_plants_texture = load_texture("./assets/FarmingPlants.png").await?;
+        let dialog_box_texture = load_texture("./assets/ui/DialogBoxBig.png").await?;
         // font
         let font = load_file("./assets/font.ttf").await.unwrap();
         // Load sounds
@@ -74,6 +78,7 @@ impl Resources {
             plants_texture,
             tilled_dirt_texture,
             farming_plants_texture,
+            dialog_box_texture,
             tiled_map_json,
             bg_animation,
             menu_texture,
@@ -137,6 +142,7 @@ struct Player {
     target_effect_timer: f32,
     wave_active: bool,
     collider: Actor,
+    show_dialog: bool,
 }
 
 #[derive(PartialEq, Clone)]
@@ -170,6 +176,7 @@ impl Player {
             target_effect_timer: 0.0,
             wave_active: false,
             collider,
+            show_dialog: false,
         }
     }
 
@@ -193,6 +200,10 @@ impl Player {
     }
 
     fn update(&mut self, dt: f32, world: &mut World, camera: &GameCamera) {
+        // Toggle dialog with S key
+        if is_key_pressed(KeyCode::S) {
+            self.show_dialog = !self.show_dialog;
+        }
         let speed = 200.0;
         let mut movement = Vec2::ZERO;
         self.is_moving = false;
@@ -298,7 +309,7 @@ impl Player {
         self.clamp_position();
     }
 
-    fn draw_player(&self, camera: &GameCamera) {
+    fn draw_player(&self, camera: &GameCamera, dialog_texture: &Texture2D) {
         let player_screen_pos = camera.world_to_screen(self.position);
         draw_texture_ex(
             &self.texture,
@@ -319,6 +330,36 @@ impl Player {
                 ..Default::default()
             },
         );
+    
+            // Draw dialog box if active
+            if self.show_dialog {
+                let player_screen_pos = camera.world_to_screen(self.position);
+                let dialog_width = 120.0;
+                let dialog_height = 40.0;
+                let dialog_x = player_screen_pos.x - dialog_width / 2.0 + 75.0;
+                let dialog_y = player_screen_pos.y - SPRITE_SIZE * camera.zoom - dialog_height + 100.0;
+    
+                // Draw dialog box background
+                draw_texture_ex(
+                    dialog_texture,
+                    dialog_x,
+                    dialog_y,
+                    WHITE,
+                    DrawTextureParams {
+                        dest_size: Some(Vec2::new(dialog_width, dialog_height)),
+                        ..Default::default()
+                    },
+                );
+    
+                // Draw text
+                let text = &format!("{:.2} SUI", 10.0141231);
+                let font_size = 20.0;
+                let text_dims = measure_text(text, None, font_size as u16, 1.0);
+                let text_x = dialog_x + (dialog_width - text_dims.width) / 2.0;
+                let text_y = dialog_y + (dialog_height + text_dims.height) / 2.0;
+                
+                draw_text(text, text_x, text_y, font_size, BLACK);
+            }
     }
 
     fn draw_wave_effect(&mut self, camera: &GameCamera) {
@@ -549,7 +590,7 @@ async fn main() -> Result<Resources, macroquad::Error> {
                 );
 
                 // Draw player at center of screen
-                player.draw_player(&camera);
+                player.draw_player(&camera, &resources.dialog_box_texture);
 
                 door.draw_door(&camera);
 
