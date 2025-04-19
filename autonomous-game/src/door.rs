@@ -1,7 +1,10 @@
 use macroquad::prelude::*;
+use platformer::World;
+
+use crate::platformer;
 
 // Door states
-enum DoorState {
+pub enum DoorState {
     Closed,
     Opening,
     Open,
@@ -33,6 +36,10 @@ impl Door {
             animation_timer: 0.0,
             frame_time: 0.1, // Time per animation frame in seconds
         }
+    }
+
+    pub fn get_position(&self) -> Vec2 {
+        self.position
     }
 
     pub fn update(&mut self, dt: f32) {
@@ -85,10 +92,16 @@ impl Door {
         );
     }
 
-    pub fn toggle(&mut self) {
+    pub fn toggle(&mut self, world: &mut World) {
         match self.state {
-            DoorState::Closed => self.state = DoorState::Opening,
-            DoorState::Open => self.state = DoorState::Closing,
+            DoorState::Closed => {
+                self.state = DoorState::Opening;
+                world.add_solid(Vec2::new(784.0, 560.0), 16, 16);
+            }
+            DoorState::Open => {
+                self.state = DoorState::Closing;
+                world.remove_solid(Vec2::new(784.0, 560.0));
+            }
             _ => {} // Don't interrupt animations in progress
         }
     }

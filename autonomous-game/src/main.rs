@@ -1,15 +1,14 @@
 mod animated_gif;
 mod door;
-
-use std::fmt::format;
+mod platformer;
 
 use animated_gif::AnimatedBackground;
 use door::Door;
 use macroquad::prelude::*;
 use macroquad::ui::Skin;
 use macroquad::ui::{hash, root_ui};
-use macroquad_platformer::*;
 use macroquad_tiled::{self as tiled, Map};
+use platformer::*;
 
 const SPRITE_SIZE: f32 = 48.0;
 const ANIMATION_SPEED: f32 = 0.1;
@@ -162,7 +161,7 @@ impl Player {
 
         // Create player collider: collision check minimize at 16px
         println!("{}, {}", screen_width(), screen_height());
-        let position = Vec2::new(720.0, 720.0);
+        let position = Vec2::new(792.0, 520.0);
         let collider = world.add_actor(position, 16, 16);
         Self {
             position,
@@ -330,36 +329,36 @@ impl Player {
                 ..Default::default()
             },
         );
-    
-            // Draw dialog box if active
-            if self.show_dialog {
-                let player_screen_pos = camera.world_to_screen(self.position);
-                let dialog_width = 120.0;
-                let dialog_height = 40.0;
-                let dialog_x = player_screen_pos.x - dialog_width / 2.0 + 75.0;
-                let dialog_y = player_screen_pos.y - SPRITE_SIZE * camera.zoom - dialog_height + 100.0;
-    
-                // Draw dialog box background
-                draw_texture_ex(
-                    dialog_texture,
-                    dialog_x,
-                    dialog_y,
-                    WHITE,
-                    DrawTextureParams {
-                        dest_size: Some(Vec2::new(dialog_width, dialog_height)),
-                        ..Default::default()
-                    },
-                );
-    
-                // Draw text
-                let text = &format!("{:.2} SUI", 10.0141231);
-                let font_size = 20.0;
-                let text_dims = measure_text(text, None, font_size as u16, 1.0);
-                let text_x = dialog_x + (dialog_width - text_dims.width) / 2.0;
-                let text_y = dialog_y + (dialog_height + text_dims.height) / 2.0;
-                
-                draw_text(text, text_x, text_y, font_size, BLACK);
-            }
+
+        // Draw dialog box if active
+        if self.show_dialog {
+            let player_screen_pos = camera.world_to_screen(self.position);
+            let dialog_width = 120.0;
+            let dialog_height = 40.0;
+            let dialog_x = player_screen_pos.x - dialog_width / 2.0 + 75.0;
+            let dialog_y = player_screen_pos.y - SPRITE_SIZE * camera.zoom - dialog_height + 100.0;
+
+            // Draw dialog box background
+            draw_texture_ex(
+                dialog_texture,
+                dialog_x,
+                dialog_y,
+                WHITE,
+                DrawTextureParams {
+                    dest_size: Some(Vec2::new(dialog_width, dialog_height)),
+                    ..Default::default()
+                },
+            );
+
+            // Draw text
+            let text = &format!("{:.2} SUI", 10.0141231);
+            let font_size = 20.0;
+            let text_dims = measure_text(text, None, font_size as u16, 1.0);
+            let text_x = dialog_x + (dialog_width - text_dims.width) / 2.0;
+            let text_y = dialog_y + (dialog_height + text_dims.height) / 2.0;
+
+            draw_text(text, text_x, text_y, font_size, BLACK);
+        }
     }
 
     fn draw_wave_effect(&mut self, camera: &GameCamera) {
@@ -573,9 +572,16 @@ async fn main() -> Result<Resources, macroquad::Error> {
                 player.update(dt, &mut world, &camera);
 
                 // Update door animation
-                // Toggle door when space is pressed
-                if is_key_pressed(KeyCode::Space) && !door.is_animating() {
-                    door.toggle();
+                // Toggle door when space is pressed and player is near
+                let door_position = door.get_position();
+                let distance_to_door = (player.position - door_position).length();
+                let interaction_distance = 16.0; // Adjust this value to change interaction range
+
+                if is_key_pressed(KeyCode::Space)
+                    && !door.is_animating()
+                    && distance_to_door < interaction_distance
+                {
+                    door.toggle(&mut world);
                 }
                 door.update(dt);
 
