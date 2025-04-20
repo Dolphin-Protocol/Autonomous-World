@@ -7,6 +7,7 @@ import {
   WalletAccount,
   WalletWithFeatures,
 } from "@mysten/wallet-standard";
+import { update_sui_address } from "../wasm/autonomous-game";
 
 // Define a type for our wallet store
 export type WalletStore = {
@@ -71,7 +72,7 @@ class WalletStateStore {
 // Export the store instance
 export const walletStore = WalletStateStore.getInstance();
 
-export async function connectWallet() {
+export async function requestConnect() {
   const { wallet } = walletStore.getState();
   if (!wallet) throw Error("No wallet available");
 
@@ -86,10 +87,11 @@ export async function connectWallet() {
   );
 
   walletStore.setAccounts(connectedSuiAccounts);
+  update_sui_address(connectedSuiAccounts[0].address)
   return connectedSuiAccounts;
 }
 
-export async function disConnectWallet() {
+export async function requestDisconnect() {
   const { wallet } = walletStore.getState();
   if (!wallet) throw Error("No wallet available");
 
@@ -101,6 +103,7 @@ export async function disConnectWallet() {
   await wallet.features["standard:disconnect"].disconnect();
 
   walletStore.setAccounts(null);
+  update_sui_address("")
 }
 
 export async function signAndExecuteTransaction(

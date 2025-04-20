@@ -1,3 +1,5 @@
+import { requestDisconnect, requestConnect } from "../src/wallet";
+
 let wasm;
 export const set_wasm = (w) => (wasm = w);
 
@@ -111,17 +113,17 @@ export function print(name) {
 }
 
 /**
- * @param {number} speed
+ * @param {number} balance
  */
-export function set_player_speed(speed) {
-  wasm.set_player_speed(speed);
+export function set_player_balance(balance) {
+  wasm.set_player_balance(balance);
 }
 
 /**
  * @returns {number}
  */
-export function get_player_speed() {
-  const ret = wasm.get_player_speed();
+export function get_player_balance() {
+  const ret = wasm.get_player_balance();
   return ret;
 }
 
@@ -152,6 +154,21 @@ export function get_sui_address() {
   } finally {
     wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
   }
+}
+
+/**
+ * @param {boolean} is_paid
+ */
+export function update_is_paid(is_paid) {
+  wasm.update_is_paid(is_paid);
+}
+
+/**
+ * @returns {boolean}
+ */
+export function get_is_paid() {
+  const ret = wasm.get_is_paid();
+  return ret !== 0;
 }
 
 async function __wbg_load(module, imports) {
@@ -189,6 +206,15 @@ function __wbg_get_imports() {
   imports.wbg = {};
   imports.wbg.__wbg_log_242335a0403ba73a = function (arg0, arg1) {
     console.log(getStringFromWasm0(arg0, arg1));
+  };
+  imports.wbg.__wbg_requestConnect_23f392dbaea78b16 = function () {
+    requestConnect();
+  };
+  imports.wbg.__wbg_requestDisconnect_5f9126d4b90cbbcd = function () {
+    requestDisconnect();
+  };
+  imports.wbg.__wbg_requestPaidTransaction_f555f8b073f9944b = function () {
+    requestPaidTransaction();
   };
   imports.wbg.__wbindgen_init_externref_table = function () {
     const table = wasm.__wbindgen_export_0;

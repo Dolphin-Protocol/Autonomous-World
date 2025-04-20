@@ -1,5 +1,6 @@
-
-use autonomous_game::{console_log, get_state};
+use autonomous_game::{
+    console_log, get_state, request_connect, request_disconnect, request_paid_transaction,
+};
 mod animated_gif;
 mod door;
 mod platformer;
@@ -14,7 +15,6 @@ use platformer::*;
 
 const SPRITE_SIZE: f32 = 48.0;
 const ANIMATION_SPEED: f32 = 0.1;
-
 
 enum GameState {
     MainMenu,
@@ -202,15 +202,11 @@ impl Player {
     }
 
     fn update(&mut self, dt: f32, world: &mut World, camera: &GameCamera) {
-        let mut speed = 200.0;
-        if get_state().speed != 0.0 {
-            speed = get_state().speed;
-        };
+        let speed = 200.0;
         // Toggle dialog with S key
         if is_key_pressed(KeyCode::S) {
             self.show_dialog = !self.show_dialog;
         }
-        let speed = 200.0;
         let mut movement = Vec2::ZERO;
         self.is_moving = false;
 
@@ -570,10 +566,14 @@ async fn main() -> Result<Resources, macroquad::Error> {
                         }
                         if get_state().sui_address.is_empty() {
                             // disconnected
-                            if ui.button(vec2(14.0, 135.0), "Connect") {}
+                            if ui.button(vec2(14.0, 135.0), "Connect") {
+                                request_connect();
+                            }
                         } else {
                             // connected
-                            if ui.button(vec2(14.0, 135.0), "Connected") {}
+                            if ui.button(vec2(14.0, 135.0), "Connected") {
+                                request_disconnect();
+                            }
                         };
                     },
                 );
@@ -594,7 +594,13 @@ async fn main() -> Result<Resources, macroquad::Error> {
                     && !door.is_animating()
                     && distance_to_door < interaction_distance
                 {
-                    door.toggle(&mut world);
+                    let is_paid = get_state().is_paid;
+                    if is_paid {
+                        door.toggle(&mut world);
+                    } else {
+                        // request paid transaction
+                        request_paid_transaction();
+                    };
                 }
                 door.update(dt);
 

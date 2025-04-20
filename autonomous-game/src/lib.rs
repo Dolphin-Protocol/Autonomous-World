@@ -16,6 +16,15 @@ extern "C" {
 
     #[wasm_bindgen(js_name = logPosition)]
     fn log_position(x: f32, y: f32);
+
+    #[wasm_bindgen(js_name = requestConnect)]
+    fn request_connect_();
+
+    #[wasm_bindgen(js_name = requestDisconnect)]
+    fn request_disconnect_();
+
+    #[wasm_bindgen(js_name = requestPaidTransaction)]
+    fn request_paid_transaction_();
 }
 
 // have to wrap the extern function
@@ -23,16 +32,30 @@ pub fn console_log(s: &str) {
     log(s);
 }
 
+pub fn request_connect() {
+    request_connect_();
+}
+
+pub fn request_disconnect() {
+    request_disconnect_();
+}
+
+pub fn request_paid_transaction() {
+    request_paid_transaction_();
+}
+
 lazy_static! {
     static ref SHARED_STATE: Mutex<SharedState> = Mutex::new(SharedState {
-        speed: 0.0,
+        balance: 0.0,
         sui_address: "".to_string(),
+        is_paid: false
     });
 }
 
 pub struct SharedState {
-    pub speed: f32,
     pub sui_address: String,
+    pub balance: f32,
+    pub is_paid: bool,
 }
 
 pub fn get_state() -> std::sync::MutexGuard<'static, SharedState> {
@@ -40,13 +63,13 @@ pub fn get_state() -> std::sync::MutexGuard<'static, SharedState> {
 }
 
 #[wasm_bindgen]
-pub fn set_player_speed(speed: f32) {
-    get_state().speed = speed;
+pub fn set_player_balance(balance: f32) {
+    get_state().balance = balance;
 }
 
 #[wasm_bindgen]
-pub fn get_player_speed() -> f32 {
-    get_state().speed
+pub fn get_player_balance() -> f32 {
+    get_state().balance
 }
 
 #[wasm_bindgen]
@@ -57,4 +80,14 @@ pub fn update_sui_address(sui_address: String) {
 #[wasm_bindgen]
 pub fn get_sui_address() -> String {
     get_state().sui_address.clone()
+}
+
+#[wasm_bindgen]
+pub fn update_is_paid(is_paid: bool) {
+    get_state().is_paid = is_paid;
+}
+
+#[wasm_bindgen]
+pub fn get_is_paid() -> bool {
+    get_state().is_paid
 }

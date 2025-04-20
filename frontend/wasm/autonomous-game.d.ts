@@ -1,10 +1,12 @@
 /* tslint:disable */
 /* eslint-disable */
 export function print(name: string): void;
-export function set_player_speed(speed: number): void;
-export function get_player_speed(): number;
+export function set_player_balance(balance: number): void;
+export function get_player_balance(): number;
 export function update_sui_address(sui_address: string): void;
 export function get_sui_address(): string;
+export function update_is_paid(is_paid: boolean): void;
+export function get_is_paid(): boolean;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
@@ -31,10 +33,12 @@ export interface InitOutput {
   readonly on_files_dropped_finish: () => void;
   readonly on_file_dropped: (a: number, b: number, c: number, d: number) => void;
   readonly print: (a: number, b: number) => void;
-  readonly get_player_speed: () => number;
+  readonly get_player_balance: () => number;
   readonly update_sui_address: (a: number, b: number) => void;
   readonly get_sui_address: () => [number, number];
-  readonly set_player_speed: (a: number) => void;
+  readonly update_is_paid: (a: number) => void;
+  readonly get_is_paid: () => number;
+  readonly set_player_balance: (a: number) => void;
   readonly __wbindgen_export_0: WebAssembly.Table;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
