@@ -1,4 +1,4 @@
-import { SuiClient } from "@mysten/sui/client";
+import { getFullnodeUrl, SuiClient } from "@mysten/sui/client";
 import { Transaction } from "@mysten/sui/transactions";
 import {
   getWallets,
@@ -14,6 +14,7 @@ export type WalletStore = {
   wallet: WalletWithFeatures<Partial<SuiWalletFeatures>> | null;
   accounts: WalletAccount[] | null;
   isConnected: boolean;
+  suiClient: SuiClient | null;
 };
 
 // Create a singleton store instance
@@ -23,11 +24,16 @@ class WalletStateStore {
     wallet: null,
     accounts: null,
     isConnected: false,
+    suiClient: null,
   };
   private listeners: ((state: WalletStore) => void)[] = [];
 
   private constructor() {
-    // Initialize wallet
+    this.state.wallet = null;
+    this.state.suiClient = new SuiClient({ url: getFullnodeUrl("testnet") });
+  }
+
+  getSuiWallet() {
     const availableWallets = getWallets().get();
     this.state.wallet =
       availableWallets.find((w) => w.name === "Sui Wallet") || null;
@@ -38,6 +44,10 @@ class WalletStateStore {
       WalletStateStore.instance = new WalletStateStore();
     }
     return WalletStateStore.instance;
+  }
+
+  getClient() {
+    return this.state.suiClient;
   }
 
   // Get current state
@@ -71,6 +81,9 @@ class WalletStateStore {
 
 // Export the store instance
 export const walletStore = WalletStateStore.getInstance();
+setTimeout(() => {
+  walletStore.getSuiWallet();
+}, 500);
 
 export async function requestConnect() {
   const { wallet } = walletStore.getState();
@@ -87,7 +100,7 @@ export async function requestConnect() {
   );
 
   walletStore.setAccounts(connectedSuiAccounts);
-  update_sui_address(connectedSuiAccounts[0].address)
+  update_sui_address(connectedSuiAccounts[0].address);
   return connectedSuiAccounts;
 }
 
@@ -103,14 +116,19 @@ export async function requestDisconnect() {
   await wallet.features["standard:disconnect"].disconnect();
 
   walletStore.setAccounts(null);
-  update_sui_address("")
+  update_sui_address("");
 }
 
-export async function signAndExecuteTransaction(
-  client: SuiClient,
+export async function requestPaidTransaction() {
+  // empty transaction
+  const tx = new Transaction();
 
-  tx: Transaction,
-) {
+  await signAndExecuteTransaction(tx);
+}
+
+export async function signAndExecuteTransaction(tx: Transaction) {
+  const client = walletStore.getClient();
+  if (!client) throw Error("fail to initlize suiClient");
   const { wallet, accounts } = walletStore.getState();
   if (!wallet || !accounts) throw Error("No Connected wallet account");
 

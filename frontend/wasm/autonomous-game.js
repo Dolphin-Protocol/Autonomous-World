@@ -1,4 +1,4 @@
-import { requestDisconnect, requestConnect } from "../src/wallet";
+import { requestDisconnect, requestConnect, requestPaidTransaction} from "../src/wallet";
 
 let wasm;
 export const set_wasm = (w) => (wasm = w);

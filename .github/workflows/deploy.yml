@@ -1,39 +1,23 @@
-name: Build and Deploy
+---
+name: Build and Deploy WASM-Bindgen Vite React App
 on:
   push:
-    branches:
-      - main # If your default branch is named something else, change this
-
-permissions:
-  contents: write
-  pages: write
-
+    branches: [feat/wasm-bindgen]
+  pull_request:
+    branches: [feat/wasm-bindgen]
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - name: Build Vite React App
+        run: cd frontend && npm run build
+        env:
+          NODE_ENV: production
 
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
+      # Optional: Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
+        if: github.event_name == 'push'
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          toolchain: stable
-          target: wasm32-unknown-unknown
-          override: true
-
-      - name: Build
-        run: cd autonomous-game && cargo build --release --target wasm32-unknown-unknown
-
-      - name: Prepare Deployment Directory
-        run: |
-          mkdir -p ./deploy/assets
-          cp ./autonomous-game/target/wasm32-unknown-unknown/release/autonomous-game.wasm ./deploy/
-          cp ./index.html ./deploy/
-          cp -r ./autonomous-game/assets/ ./deploy/
-
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./deploy
+          folder: dist  # The folder the action should deploy (output of Vite build)
+          branch: gh-pages  # The branch the action should deploy to

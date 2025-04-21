@@ -8,15 +8,17 @@
   </head>
   <body>
     <canvas id="glcanvas" tabindex="1"></canvas>
-    <script src="https://not-fl3.github.io/miniquad-samples/mq_js_bundle.js"></script>
+    <!-- <script src="https://not-fl3.github.io/miniquad-samples/mq_js_bundle.js"></script> -->
+    <script src="./src/miniquad.js"></script>
     <script type="module">
       import init, {
         set_wasm,
       } from "./wasm/autonomous-game.js";
+      import{miniquad_add_plugin, load, wasm_exports} from "./src/miniquad.js"
 
       window.wasmInitialized = new Promise(async (resolve) => {
         let wbg = await init();
-        
+
         miniquad_add_plugin({
           register_plugin: (a) => (a.wbg = wbg),
           on_init: () => {
@@ -27,10 +29,9 @@
           version: "0.0.1",
           name: "wbg",
         });
-        
+
         load("./wasm/autonomous-game_bg.wasm");
       });
-
     </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
