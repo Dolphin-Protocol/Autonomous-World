@@ -5,7 +5,7 @@ on:
     branches: [feat/wasm-bindgen]
   pull_request:
     branches: [feat/wasm-bindgen]
-# Add this permissions block
+# Add permissions block to allow the workflow to push to the repository
 permissions:
   contents: write
 jobs:
@@ -29,4 +29,4 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: frontend/dist
-          branch: gh-pages
+          branch: wasm-pages  # Changed from gh-pages to wasm-pages
