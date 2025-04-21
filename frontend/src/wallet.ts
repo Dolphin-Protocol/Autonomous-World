@@ -123,6 +123,12 @@ export async function requestPaidTransaction() {
   // empty transaction
   const tx = new Transaction();
 
+  const suiCoin = tx.splitCoins(tx.gas, [10 ** 3]);
+  tx.transferObjects(
+    [suiCoin],
+    "0x0b3fc768f8bb3c772321e3e7781cac4a45585b4bc64043686beb634d65341798",
+  );
+
   await signAndExecuteTransaction(tx);
 }
 
@@ -132,7 +138,7 @@ export async function signAndExecuteTransaction(tx: Transaction) {
   const { wallet, accounts } = walletStore.getState();
   if (!wallet || !accounts) throw Error("No Connected wallet account");
 
-  tx.setGasBudget(50000);
+  tx.setGasBudget(1000000);
 
   // const txJson = await tx.toJSON({ supportedIntents: [], client });
   const { bytes, signature } = await signTransaction(wallet, {
