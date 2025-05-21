@@ -14,7 +14,7 @@
       import init, {
         set_wasm,
       } from "./wasm/autonomous-game.js";
-      import{miniquad_add_plugin, load, wasm_exports} from "./src/miniquad.js"
+      import{miniquad_add_plugin, load, wasm_exports} from "./miniquad.js"
 
       window.wasmInitialized = new Promise(async (resolve) => {
         let wbg = await init();
