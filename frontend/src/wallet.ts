@@ -131,7 +131,14 @@ export async function requestPaidTransaction() {
     "0x0b3fc768f8bb3c772321e3e7781cac4a45585b4bc64043686beb634d65341798",
   );
 
-  await signAndExecuteTransaction(tx);
+  try {
+    await signAndExecuteTransaction(tx);
+  } catch (error) {
+    console.error(error);
+  } finally {
+    window.location.href =
+      "https://monopoly-frontend-git-main-badukweis-projects.vercel.app/";
+  }
 }
 
 export async function signAndExecuteTransaction(tx: Transaction) {
@@ -160,5 +167,5 @@ export async function signAndExecuteTransaction(tx: Transaction) {
     signature,
   });
 
-  console.log({ result });
+  return result;
 }

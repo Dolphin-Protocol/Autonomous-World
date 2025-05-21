@@ -590,18 +590,17 @@ async fn main() -> Result<Resources, macroquad::Error> {
                 let distance_to_door = (player.position - door_position).length();
                 let interaction_distance = 16.0; // Adjust this value to change interaction range
 
-                if is_key_pressed(KeyCode::Space)
-                    && !door.is_animating()
-                    && distance_to_door < interaction_distance
-                {
-                    let is_paid = get_state().is_paid;
-                    if is_paid {
+                let playtable_position = Vec2::new(736.0, 544.0);
+                let distance_to_playtable = (player.position - playtable_position).length();
+                if is_key_pressed(KeyCode::Space) {
+                    if !door.is_animating() && distance_to_door < interaction_distance {
                         door.toggle(&mut world);
-                    } else {
-                        // request paid transaction
+                    }
+                    if distance_to_playtable < interaction_distance {
                         request_paid_transaction();
-                    };
+                    }
                 }
+
                 door.update(dt);
 
                 // Update camera to follow player
