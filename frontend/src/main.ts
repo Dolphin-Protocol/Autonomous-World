@@ -1,4 +1,5 @@
 import "./style.css";
+import { Buffer } from "buffer";
 
 window.Buffer = Buffer;
 
