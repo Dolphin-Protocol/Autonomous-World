@@ -10,7 +10,7 @@ pub struct AnimatedBackground {
 impl AnimatedBackground {
     pub async fn load(base_path: &str, count: usize) -> Self {
         // Pre-calculate all paths first
-        let paths: Vec<String> = (0..1)
+        let paths: Vec<String> = (0..count)
             .map(|i| format!("{}frame_{:02}_delay-0.1s.png", base_path, i))
             .collect();
 

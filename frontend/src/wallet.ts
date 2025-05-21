@@ -8,6 +8,7 @@ import {
   WalletWithFeatures,
 } from "@mysten/wallet-standard";
 import { update_sui_address } from "../wasm/autonomous-game";
+import { GAS_BUDGET_AMOUNT, SlushWalletName } from "./const";
 
 // Define a type for our wallet store
 export type WalletStore = {
@@ -35,8 +36,9 @@ class WalletStateStore {
 
   getSuiWallet() {
     const availableWallets = getWallets().get();
+    console.log({ availableWallets });
     this.state.wallet =
-      availableWallets.find((w) => w.name === "Sui Wallet") || null;
+      availableWallets.find((w) => w.name === SlushWalletName) || null;
   }
 
   public static getInstance(): WalletStateStore {
@@ -122,7 +124,7 @@ export async function requestDisconnect() {
 export async function requestPaidTransaction() {
   // empty transaction
   const tx = new Transaction();
-
+  tx.setGasBudget(GAS_BUDGET_AMOUNT);
   const suiCoin = tx.splitCoins(tx.gas, [10 ** 3]);
   tx.transferObjects(
     [suiCoin],
@@ -138,7 +140,7 @@ export async function signAndExecuteTransaction(tx: Transaction) {
   const { wallet, accounts } = walletStore.getState();
   if (!wallet || !accounts) throw Error("No Connected wallet account");
 
-  tx.setGasBudget(1000000);
+  tx.setGasBudget(GAS_BUDGET_AMOUNT);
 
   // const txJson = await tx.toJSON({ supportedIntents: [], client });
   const { bytes, signature } = await signTransaction(wallet, {
