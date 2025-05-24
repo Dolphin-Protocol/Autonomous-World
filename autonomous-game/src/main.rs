@@ -561,7 +561,9 @@ async fn main() -> Result<Resources, macroquad::Error> {
                     |ui| {
                         ui.label(vec2(90., -10.), "Main Menu");
 
-                        if ui.button(vec2(65.0, 35.0), "Play") {
+                        if ui.button(vec2(65.0, 35.0), "Play")
+                            && !get_state().sui_address.is_empty()
+                        {
                             game_state = GameState::Playing;
                         }
                         if get_state().sui_address.is_empty() {
