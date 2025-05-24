@@ -5,32 +5,188 @@
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Autonomous World</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        overflow: hidden;
+      }
+
+      #glcanvas {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
+
+      /* Loading Screen Styles */
+      #loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: linear-gradient(135deg, #8BB6A8 0%, #6B9E87 50%, #5A8A6B 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+      }
+
+      #loading-screen.hidden {
+        opacity: 0;
+        visibility: hidden;
+      }
+
+      .loading-content {
+        text-align: center;
+        color: #F4E6D3;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+      }
+
+      .loading-title {
+        font-size: 2.5rem;
+        font-weight: 300;
+        margin-bottom: 2rem;
+        letter-spacing: 2px;
+      }
+
+      .loading-spinner {
+        width: 60px;
+        height: 60px;
+        border: 3px solid rgba(244, 230, 211, 0.3);
+        border-top: 3px solid #F4E6D3;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 2rem;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      .loading-text {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        margin-bottom: 1rem;
+      }
+
+      .loading-progress {
+        width: 200px;
+        height: 4px;
+        background: rgba(244, 230, 211, 0.3);
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 0 auto;
+        border: 1px solid rgba(139, 182, 168, 0.5);
+      }
+
+      .loading-progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #D4A574 0%, #E6C79C 100%);
+        width: 0%;
+        transition: width 0.3s ease;
+        border-radius: 3px;
+        box-shadow: 0 0 8px rgba(212, 165, 116, 0.6);
+      }
+
+      /* Pulse animation for loading dots */
+      .loading-dots::after {
+        content: '';
+        animation: dots 1.5s infinite;
+      }
+
+      @keyframes dots {
+        0%, 20% { content: ''; }
+        40% { content: '.'; }
+        60% { content: '..'; }
+        80%, 100% { content: '...'; }
+      }
+    </style>
   </head>
   <body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+      <div class="loading-content">
+        <h1 class="loading-title">Autonomous World</h1>
+        <div class="loading-spinner"></div>
+        <p class="loading-text">Loading game resources<span class="loading-dots"></span></p>
+        <div class="loading-progress">
+          <div class="loading-progress-bar" id="progress-bar"></div>
+        </div>
+      </div>
+    </div>
+
     <canvas id="glcanvas" tabindex="1"></canvas>
-    <!-- <script src="https://not-fl3.github.io/miniquad-samples/mq_js_bundle.js"></script> -->
-    <!-- <script src="./src/miniquad.js"></script> -->
+    
     <script type="module">
       import init, {
         set_wasm,
       } from "./wasm/autonomous-game.js";
       import{miniquad_add_plugin, load, wasm_exports} from "./src/miniquad.js"
+      
+      // Loading progress simulation
+      let progress = 0;
+      const progressBar = document.getElementById('progress-bar');
+      const loadingText = document.querySelector('.loading-text');
+      
+      const updateProgress = (percent, text = 'Loading game resources') => {
+        progress = Math.min(percent, 100);
+        progressBar.style.width = progress + '%';
+        loadingText.innerHTML = text + '<span class="loading-dots"></span>';
+      };
+
+      const hideLoadingScreen = () => {
+        const loadingScreen = document.getElementById('loading-screen');
+        loadingScreen.classList.add('hidden');
+        
+        // Remove the loading screen from DOM after transition
+        setTimeout(() => {
+          loadingScreen.remove();
+        }, 500);
+      };
+
+      // Global function to start the game (call this when you want to show the canvas)
+      window.emitGameStart = () => {
+        updateProgress(100, 'Starting game');
+        setTimeout(() => {
+          hideLoadingScreen();
+        }, 500);
+      };
 
       window.wasmInitialized = new Promise(async (resolve) => {
-        let wbg = await init();
-
-        miniquad_add_plugin({
-          register_plugin: (a) => (a.wbg = wbg),
-          on_init: () => {
-            set_wasm(wasm_exports);
-            // Resolve the promise when initialization is complete
-            resolve();
-          },
-          version: "0.0.1",
-          name: "wbg",
-        });
-
-        load("./wasm/autonomous-game_bg.wasm");
+        try {
+          updateProgress(20, 'Initializing WASM');
+          
+          let wbg = await init();
+          updateProgress(40, 'Setting up plugins');
+          
+          miniquad_add_plugin({
+            register_plugin: (a) => (a.wbg = wbg),
+            on_init: () => {
+              updateProgress(80, 'Finalizing setup');
+              set_wasm(wasm_exports);
+              // Resolve the promise when initialization is complete
+              resolve();
+            },
+            version: "0.0.1",
+            name: "wbg",
+          });
+          
+          updateProgress(60, 'Loading game assets');
+          load("./wasm/autonomous-game_bg.wasm");
+          
+        } catch (error) {
+          console.error('Failed to initialize WASM:', error);
+          loadingText.innerHTML = 'Failed to load game. Please refresh and try again.';
+        }
       });
     </script>
     <script type="module" src="/src/main.ts"></script>

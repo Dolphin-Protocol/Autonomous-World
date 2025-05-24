@@ -169,3 +169,7 @@ export async function signAndExecuteTransaction(tx: Transaction) {
 
   return result;
 }
+
+export function emitGameStart() {
+  (window as any).emitGameStart();
+}

@@ -1,5 +1,5 @@
 use autonomous_game::{
-    console_log, get_state, request_connect, request_disconnect, request_paid_transaction,
+    emit_game_start, get_state, request_connect, request_disconnect, request_paid_transaction,
 };
 mod animated_gif;
 mod door;
@@ -527,7 +527,8 @@ async fn main() -> Result<Resources, macroquad::Error> {
 
     let window_size = vec2(370.0, 320.0);
 
-    console_log("game start; called from rust");
+    emit_game_start();
+
     let mut bg_animation = resources.bg_animation;
 
     loop {

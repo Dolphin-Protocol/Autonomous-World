@@ -25,6 +25,9 @@ extern "C" {
 
     #[wasm_bindgen(js_name = requestPaidTransaction)]
     fn request_paid_transaction_();
+
+    #[wasm_bindgen(js_name = emitGameStart)]
+    fn emit_game_start_();
 }
 
 // have to wrap the extern function
@@ -42,6 +45,10 @@ pub fn request_disconnect() {
 
 pub fn request_paid_transaction() {
     request_paid_transaction_();
+}
+
+pub  fn emit_game_start(){
+    emit_game_start_()
 }
 
 lazy_static! {
